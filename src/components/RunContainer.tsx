@@ -10,12 +10,13 @@ import { clearRun, loadRun, saveRun } from "@/lib/storage";
 import type { DraftPick, PoolHitter, PoolPitcher, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
 import { LEAGUE_AVERAGE_OPPONENT } from "@/sim/baseline";
 import { simulateSeason } from "@/sim/season";
+import { BoxScores } from "./BoxScores";
 import { DraftScreen } from "./DraftScreen";
 import { ResultScreen } from "./ResultScreen";
 import { SimulateScreen } from "./SimulateScreen";
 import { SpinAnimation } from "./SpinAnimation";
 
-type Phase = "spinning" | "draft" | "simulate" | "result";
+type Phase = "spinning" | "draft" | "simulate" | "result" | "boxscores";
 type Rerolls = { team: number; era: number };
 
 const randomSeed = () => Math.floor(Math.random() * 0xffffffff) >>> 0;
@@ -142,12 +143,12 @@ export function RunContainer() {
     return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
   }
 
-  if (phase === "result" || phase === "simulate") {
+  if (phase === "simulate" || phase === "result" || phase === "boxscores") {
     if (!result) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
-    return phase === "simulate" ? (
-      <SimulateScreen result={result} onDone={() => setPhase("result")} />
-    ) : (
-      <ResultScreen result={result} picks={picks} onReplay={startOver} />
+    if (phase === "simulate") return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
+    if (phase === "boxscores") return <BoxScores result={result} picks={picks} onBack={() => setPhase("result")} />;
+    return (
+      <ResultScreen result={result} picks={picks} onReplay={startOver} onViewBoxScores={() => setPhase("boxscores")} />
     );
   }
 

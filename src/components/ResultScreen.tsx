@@ -13,10 +13,12 @@ export function ResultScreen({
   result,
   picks,
   onReplay,
+  onViewBoxScores,
 }: {
   result: SeasonResult;
   picks: DraftPick[];
   onReplay: () => void;
+  onViewBoxScores: () => void;
 }) {
   const { w, l } = result.record;
 
@@ -46,6 +48,12 @@ export function ResultScreen({
       </p>
 
       <div className="mt-8 flex flex-col items-center gap-3">
+        <button
+          onClick={onViewBoxScores}
+          className="rounded-lg bg-navy px-10 py-3 font-mono text-sm uppercase tracking-[0.2em] text-paper transition-transform hover:scale-[1.02] active:scale-95"
+        >
+          Box scores
+        </button>
         <button
           onClick={onReplay}
           className="rounded-lg bg-vintage px-10 py-3 font-mono text-sm uppercase tracking-[0.2em] text-paper transition-transform hover:scale-[1.02] active:scale-95"
