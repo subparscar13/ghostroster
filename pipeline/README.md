@@ -40,6 +40,7 @@ Output is written to `../public/data/` (`teams.json`, `td/*.json`,
 
 ## Eligibility defaults (flagged tuning items)
 
-Hitters ≥ 20 G · SP ≥ 10 GS · RP ≥ 20 relief appearances; a team-decade cell needs
-≥ 9 hitters, ≥ 3 SP, ≥ 1 RP or it is excluded from `teams.json`. These are
-defaults per brief §3 — revisit only if M2 tuning shows problems.
+Hitters ≥ 80 G **and** ≥ 200 PA · SP ≥ 20 GS · RP ≥ 30 relief appearances; a
+team-decade cell needs ≥ 9 hitters, ≥ 3 SP, ≥ 1 RP or it is excluded from
+`teams.json`. Tightened from the brief's looser defaults to everyday-regular /
+true-rotation thresholds — still flagged tuning levers.

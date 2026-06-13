@@ -1,17 +1,16 @@
 """Team-decade eligibility (T014).
 
 Maps each player-season to a (franchise, decade) cell and keeps only seasons that
-clear the eligibility floor. Defaults per brief §3 (flagged tuning items): hitters
-≥ 20 G *and* ≥ 50 PA, SP ≥ 10 GS, RP ≥ 20 relief appearances. A pitcher is classed
-SP if any season qualifies as a starter, else RP (swingmen draft as starters).
+clear the eligibility floor (flagged tuning thresholds): hitters ≥ 80 G *and*
+≥ 200 PA, SP ≥ 20 GS, RP ≥ 30 relief appearances. A pitcher is classed SP if any
+season qualifies as a starter, else RP (swingmen draft as starters).
 
-The ≥ 50 PA floor is in addition to the brief's ≥ 20 G default: G counts any
-appearance (pinch-run, defense, *pitching*), so a games-only threshold leaks
-pitchers and deep-bench players into the hitter pool with tiny-sample, nonsensical
-rate vectors (e.g. a pitcher's 3-PA "season" → a 46% double rate). A modest PA
-floor removes that noise before it can corrupt M2 sim calibration. The exact value
-(50) is itself a flagged tuning lever — revisit alongside the other eligibility
-thresholds at M2.
+These are deliberately strict "everyday regular / true rotation member" thresholds
+(tightened from the brief's looser ≥ 20 G / ≥ 10 GS / ≥ 20 relief defaults): the PA
+and games floors keep pitchers and deep-bench players — whose tiny-sample rates
+produce nonsensical vectors (e.g. a pitcher's 3-PA "season" → a 46% double rate) —
+out of the pool, and only ship players who actually carried a season. All four
+values remain flagged tuning levers.
 """
 
 from __future__ import annotations
@@ -20,10 +19,10 @@ import pandas as pd
 
 from .tables import Tables
 
-MIN_HITTER_G = 20
-MIN_HITTER_PA = 50
-MIN_SP_GS = 10
-MIN_RP_RELIEF = 20
+MIN_HITTER_G = 80
+MIN_HITTER_PA = 200
+MIN_SP_GS = 20
+MIN_RP_RELIEF = 30
 
 
 def _num(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:

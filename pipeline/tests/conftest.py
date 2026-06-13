@@ -22,26 +22,26 @@ _TEAMS = """yearID,lgID,teamID,franchID,name,G,R,AB,H,2B,3B,HR,BB,SO,HBP,SF,HA,H
 1921,AL,BOS,BOS,Boston Red Sox,154,668,5223,1432,251,75,17,452,492,25,0,1502,55,455,470,4140
 """
 
-# Batting: a handful of NYA 1921 hitters (>=20 G) + one ineligible (low G).
+# Batting: 9 eligible NYA 1921 hitters (>=80 G and >=200 PA) + one ineligible (low G).
 _BATTING = """playerID,yearID,teamID,lgID,G,AB,R,H,2B,3B,HR,RBI,SB,BB,SO,IBB,HBP,SF,SH
 ruthba01,1921,NYA,AL,152,540,177,204,44,16,59,168,17,145,81,0,4,0,0
 meusebo01,1921,NYA,AL,149,599,92,189,24,16,24,135,17,42,88,0,2,0,0
 pippwa01,1921,NYA,AL,153,588,96,186,35,9,8,97,17,49,40,0,3,0,0
 wardaa01,1921,NYA,AL,153,606,92,170,24,5,5,75,14,69,53,0,2,0,0
-schasc01,1921,NYA,AL,52,180,20,45,7,2,1,22,3,15,18,0,1,0,0
+schasc01,1921,NYA,AL,100,195,20,48,7,2,1,22,3,15,18,0,1,0,0
 mcnaja01,1921,NYA,AL,121,398,48,118,16,5,1,55,5,37,22,0,1,0,0
 bakerfr01,1921,NYA,AL,94,330,46,97,16,2,9,71,1,26,28,0,1,0,0
 fewstch01,1921,NYA,AL,81,180,30,49,8,3,1,18,4,21,19,0,1,0,0
-deveca01,1921,NYA,AL,41,96,15,25,4,1,0,12,2,9,11,0,0,0,0
+deveca01,1921,NYA,AL,90,205,15,55,4,1,0,12,2,9,11,0,0,0,0
 miljo01,1921,NYA,AL,12,30,3,7,1,0,0,3,0,2,5,0,0,0,0
 """
 
-# Pitching: 3 SP (>=10 GS) + 1 RP (>=20 relief app, GS small) + 1 ineligible.
+# Pitching: 3 SP (>=20 GS) + 1 RP (>=30 relief app, GS small) + 1 ineligible.
 _PITCHING = """playerID,yearID,teamID,lgID,W,L,G,GS,IPouts,H,ER,HR,BB,SO,BFP,HBP,ERA
 maysca01,1921,NYA,AL,27,9,49,38,1011,332,121,17,76,70,1438,5,3.05
 hoytwa01,1921,NYA,AL,19,13,43,32,847,301,98,11,81,102,1226,4,3.09
 shawbo01,1921,NYA,AL,18,12,38,31,791,297,110,12,79,68,1170,6,3.76
-quinnja01,1921,NYA,AL,8,7,32,3,331,140,52,5,21,29,470,2,4.24
+quinnja01,1921,NYA,AL,8,7,35,3,331,140,52,5,21,29,470,2,4.24
 collira01,1921,NYA,AL,11,5,22,5,330,140,40,4,21,38,460,2,3.27
 """
 

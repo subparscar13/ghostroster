@@ -139,9 +139,9 @@ function simulateSeason(roster: Roster, opponent: OpponentModel, seed: number): 
 
 ## Flagged tuning items (do not silently resolve)
 
-Hitter eligibility ≥20 G + ≥50 PA floor (the PA floor was set during M1, commit
-dc33ae3, to exclude tiny-sample pitcher/bench vectors); pitcher eligibility
-(≥10 GS) + RP usage rule; 2B/3B-allowed league-split estimate; z-score fallback
+Hitter eligibility ≥80 G + ≥200 PA (tightened to everyday-regular level, excluding
+small-sample cheat-code rates); pitcher eligibility (SP ≥20 GS, RP ≥30 relief) +
+RP usage rule; 2B/3B-allowed league-split estimate; z-score fallback
 for outlier seasons; advancement-table refinements + no-DP/no-SF + no-RP-fatigue
 levers; letter-grade scale; run-environment ±10% / 162-0 top-1–3% / 145–158
 near-miss calibration (SC-004).

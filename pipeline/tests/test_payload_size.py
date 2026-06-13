@@ -23,3 +23,14 @@ def test_payload_within_budget(mini_lahman: Path, tmp_path: Path) -> None:
     assert chunks, "expected at least one td chunk"
     for chunk in chunks:
         assert chunk.stat().st_size < MAX_CHUNK, f"{chunk.name} exceeds {MAX_CHUNK} bytes"
+
+
+def test_stale_chunks_removed(mini_lahman: Path, tmp_path: Path) -> None:
+    """A prior run's orphan chunk must be cleared so output == the emitted set
+    (eligibility changes must never leave dead data behind)."""
+    out = tmp_path / "data"
+    (out / "td").mkdir(parents=True)
+    stale = out / "td" / "ZZZ-1900.json"
+    stale.write_text("{}\n", encoding="utf-8")
+    run_pipeline(mini_lahman, out, tmp_path / "edition.lock.json")
+    assert not stale.exists(), "stale chunk from a prior run should have been removed"

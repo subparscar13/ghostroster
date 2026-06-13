@@ -1,10 +1,10 @@
 {
   "edition": "lahman-2025",
   "pool": {
-    "hitters": 21221,
-    "sp": 6753,
-    "rp": 6465,
-    "cells": 270
+    "hitters": 9940,
+    "sp": 4212,
+    "rp": 5079,
+    "cells": 260
   },
   "runEnvironment": {
     "seasons": 200,
@@ -14,18 +14,18 @@
   },
   "optimalPlay_bestPickDrafts": {
     "drafts": 5000,
-    "meanWins": 153.1,
-    "p50": 154,
-    "p90": 159,
-    "p97": 160,
-    "p99": 161,
-    "perfect162_0": 34,
-    "perfectPct": 0.68,
-    "inBand145_158Pct": 83.5
+    "meanWins": 149.9,
+    "p50": 150,
+    "p90": 156,
+    "p97": 158,
+    "p99": 160,
+    "perfect162_0": 7,
+    "perfectPct": 0.14,
+    "inBand145_158Pct": 82.7
   },
   "theoreticalCeiling_globalBestRoster": {
     "seasons": 500,
-    "perfectPct": 99.2
+    "perfectPct": 96
   },
   "scTargets": {
     "SC-004.1 runEnv ±10% & ~.500": "see runEnvironment",

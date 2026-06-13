@@ -69,7 +69,7 @@ shippable until it is back under budget.
 - Spin index `teams.json` lists every (franchise, decade) cell meeting the
   eligibility floor; cells failing it are excluded.
 - Eligibility defaults (tunable in M1, flagged not silently changed): hitters
-  ≥ 20 G, SP ≥ 10 starts, RP ≥ 20 relief appearances; a cell needs ≥ 9 hitters,
+  ≥ 80 G and ≥ 200 PA, SP ≥ 20 starts, RP ≥ 30 relief appearances; a cell needs ≥ 9 hitters,
   ≥ 3 SP, ≥ 1 RP.
 - Player line = **best single season** with that team in that decade.
 - Sim vectors are era-adjusted, league-relative (player rate ÷ league rate that

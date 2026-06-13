@@ -111,4 +111,19 @@ describe("buildSimRoster", () => {
   it("throws on an incomplete draft", () => {
     expect(() => buildSimRoster([])).toThrow();
   });
+
+  it("bats the lineup in descending OPS order", () => {
+    const ops = ["0.700", "1.100", "0.850", "0.950", "0.600", "1.000", "0.800", "0.900", "0.750"];
+    let picks: DraftPick[] = [];
+    ops.forEach((o, i) => {
+      const h = hitter(`h${i}`, ["DH"]);
+      h.display.OPS = o;
+      picks = draftHitter(h, "", picks)!;
+    });
+    for (let i = 0; i < 3; i++) picks = draftPitcher(pitcher(`s${i}`, "SP"), "", picks)!;
+    picks = draftPitcher(pitcher("rp", "RP"), "", picks)!;
+
+    const lineupIds = buildSimRoster(picks).lineup.map((h) => h.playerId);
+    expect(lineupIds).toEqual(["h1", "h5", "h3", "h7", "h2", "h6", "h8", "h0", "h4"]);
+  });
 });

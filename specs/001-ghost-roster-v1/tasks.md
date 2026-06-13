@@ -42,7 +42,7 @@ gate as automated tests.
 - [x] T013 [US1] `download.py` — fetch the current Lahman edition into `.cache/` (Lahman CSV/SQLite distribution or pybaseball's Lahman loader; **never BRef/MLB-API**); extract license text + edition year; write `public/data/ATTRIBUTION.json`; raise on license mismatch.
 
 ### Transform
-- [x] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥20 G **and ≥50 PA**, SP ≥10 GS, RP ≥20 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Thresholds are flagged tuning defaults; the ≥50 PA floor was added during M1 to keep pitchers/deep-bench players with tiny-sample rate vectors out of the hitter pool — commit dc33ae3.)
+- [x] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥80 G **and ≥200 PA**, SP ≥20 GS, RP ≥30 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Flagged tuning thresholds, tightened to everyday-regular / true-rotation levels — excludes small-sample cheat-code rates. `emit.py` clears stale chunks each run so output == emitted set.)
 - [x] T015 [P] [US1] `stats.py` — select each player's **best single season** with that team in that decade; build the `display` block (raw line) per data-model.
 - [x] T016 [US1] `vectors.py` — era-adjusted, league-relative `OutcomeVector` for hitters (HBP→BB) and pitchers (from BB/H/HR/IP; 2B/3B-allowed via league split); pitcher `stamina`. (depends on T015)
 
@@ -114,7 +114,7 @@ box scores + highlights, hitting the tuning targets.
 
 ## Flagged tuning items (carried, not resolved)
 
-Hitter eligibility ≥20 G **+ ≥50 PA** floor & pitcher/RP usage defaults (T014,
+Hitter eligibility ≥80 G **+ ≥200 PA** & pitcher/RP usage (SP ≥20 GS, RP ≥30) (T014,
 T034); 2B/3B-allowed league split (T016); z-score fallback + advancement table
 (T038); grade scale (T035/T045); "best team today" solver (P1, out of v1);
 ghostroster.app + handles (T063, Justin).

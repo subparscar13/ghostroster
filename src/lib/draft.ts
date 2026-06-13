@@ -74,11 +74,16 @@ const bySlot = (picks: DraftPick[], slot: Slot) => picks.find((p) => p.slot === 
 /** Assemble the pure-sim Roster from a complete set of picks (throws if incomplete). */
 export function buildSimRoster(picks: DraftPick[]): SimRoster {
   if (!isComplete(picks)) throw new Error(`draft incomplete: ${picks.length}/${ALL_SLOTS.length} picks`);
-  const lineup = HITTER_SLOTS.map((s) => {
+  // Batting order = the 9 hitters sorted by descending OPS, so the best bats hit at
+  // the top of the order (fielding slot no longer dictates lineup position).
+  const hitters = HITTER_SLOTS.map((s) => {
     const h = bySlot(picks, s)?.hitter;
     if (!h) throw new Error(`missing hitter at ${s}`);
-    return { playerId: h.playerId, name: h.name, pos: h.pos, vector: h.vector };
+    return h;
   });
+  const lineup = [...hitters]
+    .sort((a, b) => Number.parseFloat(b.display.OPS) - Number.parseFloat(a.display.OPS))
+    .map((h) => ({ playerId: h.playerId, name: h.name, pos: h.pos, vector: h.vector }));
   const rotation = (["SP1", "SP2", "SP3"] as Slot[]).map((s) => {
     const p = bySlot(picks, s)?.pitcher;
     if (!p) throw new Error(`missing SP at ${s}`);

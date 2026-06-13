@@ -103,7 +103,14 @@ def build(
     league_hit = vectors.league_hitter_rates(tables)
     league_pitch = vectors.league_pitcher_rates(tables)
     out_dir = Path(out_dir)
-    (out_dir / "td").mkdir(parents=True, exist_ok=True)
+    # Clear stale chunks first so the output is EXACTLY the emitted set — otherwise an
+    # eligibility/threshold change leaves orphan chunks from prior runs, which both
+    # ships dead data and breaks determinism (output would depend on run history).
+    td_dir = out_dir / "td"
+    if td_dir.exists():
+        for stale in td_dir.glob("*.json"):
+            stale.unlink()
+    td_dir.mkdir(parents=True, exist_ok=True)
 
     cells: list[dict] = []
     dropped = 0
