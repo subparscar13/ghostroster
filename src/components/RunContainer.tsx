@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { loadChunk, loadTeamsIndex } from "@/lib/data";
 import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
+import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam } from "@/lib/spin";
 import { clearRun, loadRun, saveRun } from "@/lib/storage";
 import type { DraftPick, PoolHitter, PoolPitcher, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
 import { LEAGUE_AVERAGE_OPPONENT } from "@/sim/baseline";
@@ -12,9 +13,9 @@ import { simulateSeason } from "@/sim/season";
 import { DraftScreen } from "./DraftScreen";
 import { ResultScreen } from "./ResultScreen";
 import { SimulateScreen } from "./SimulateScreen";
-import { SpinScreen } from "./SpinScreen";
+import { SpinAnimation } from "./SpinAnimation";
 
-type Phase = "spin" | "draft" | "simulate" | "result";
+type Phase = "spinning" | "draft" | "simulate" | "result";
 type Rerolls = { team: number; era: number };
 
 const randomSeed = () => Math.floor(Math.random() * 0xffffffff) >>> 0;
@@ -26,23 +27,43 @@ export function RunContainer() {
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [rerollsUsed, setRerollsUsed] = useState<Rerolls>({ team: 0, era: 0 });
   const [seed, setSeed] = useState<number | null>(null);
-  const [phase, setPhase] = useState<Phase>("spin");
+  const [phase, setPhase] = useState<Phase>("spinning");
 
+  const [cell, setCell] = useState<SpinCell | null>(null);
   const [chunk, setChunk] = useState<TeamDecadeChunk | null>(null);
   const [chunkLoading, setChunkLoading] = useState(false);
+  const [spinSeq, setSpinSeq] = useState(0);
 
-  useEffect(() => {
-    loadTeamsIndex().then(setIndex).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-    const saved = loadRun();
-    if (saved) {
-      setPicks(saved.picks);
-      setRerollsUsed(saved.rerollsUsed);
-      if (saved.seed != null) setSeed(saved.seed);
-      if (isComplete(saved.picks)) setPhase("result"); // resume straight to result (skip ticker)
-    }
+  // Begin a spin onto `target`: replay the reel animation while the chunk loads.
+  const spinTo = useCallback((target: SpinCell) => {
+    setCell(target);
+    setChunk(null);
+    setChunkLoading(true);
+    loadChunk(target.chunk)
+      .then(setChunk)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setChunkLoading(false));
+    setSpinSeq((s) => s + 1);
+    setPhase("spinning");
   }, []);
 
-  // The season result — pure + memoized; identical for the same (picks, seed).
+  useEffect(() => {
+    loadTeamsIndex()
+      .then((idx) => {
+        setIndex(idx);
+        const saved = loadRun();
+        const startPicks = saved?.picks ?? [];
+        if (saved) {
+          setPicks(startPicks);
+          setRerollsUsed(saved.rerollsUsed);
+          if (saved.seed != null) setSeed(saved.seed);
+        }
+        if (isComplete(startPicks)) setPhase("result");
+        else spinTo(randomCell(idx, Math.random));
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  }, [spinTo]);
+
   const result = useMemo(() => {
     if (!isComplete(picks) || seed == null) return null;
     try {
@@ -55,30 +76,19 @@ export function RunContainer() {
 
   const round = picks.length + 1;
 
-  const goSpin = () => {
-    setChunk(null);
-    setPhase("spin");
-  };
-
-  const onConfirmCell = (cell: SpinCell) => {
-    setChunkLoading(true);
-    setPhase("draft");
-    loadChunk(cell.chunk)
-      .then(setChunk)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setChunkLoading(false));
-  };
+  const persist = (next: DraftPick[], rr: Rerolls, s: number | null) =>
+    saveRun({ picks: next, rerollsUsed: rr, ...(s != null ? { seed: s } : {}) });
 
   const commit = (next: DraftPick[]) => {
     setPicks(next);
     if (isComplete(next)) {
       const s = seed ?? randomSeed();
       setSeed(s);
+      persist(next, rerollsUsed, s);
       setPhase("simulate");
-      saveRun({ rerollsUsed, picks: next, seed: s });
     } else {
-      saveRun({ rerollsUsed, picks: next, ...(seed != null ? { seed } : {}) });
-      goSpin();
+      persist(next, rerollsUsed, seed);
+      if (index) spinTo(randomCell(index, Math.random));
     }
   };
 
@@ -91,13 +101,30 @@ export function RunContainer() {
     if (next) commit(next);
   };
 
+  const consumeAndSpin = (kind: "team" | "era", next: SpinCell) => {
+    const rr = { ...rerollsUsed, [kind]: rerollsUsed[kind] + 1 };
+    setRerollsUsed(rr);
+    persist(picks, rr, seed);
+    spinTo(next);
+  };
+  const onRerollTeam = () => {
+    if (!index || !cell || rerollsUsed.team > 0 || !canRerollTeam(index, cell)) return;
+    consumeAndSpin("team", rerollTeam(index, cell, Math.random));
+  };
+  const onRerollEra = () => {
+    if (!index || !cell || rerollsUsed.era > 0 || !canRerollEra(index, cell)) return;
+    consumeAndSpin("era", rerollEra(index, cell, Math.random));
+  };
+  const onRespin = () => {
+    if (index) spinTo(randomCell(index, Math.random)); // free escape — no re-roll consumed
+  };
+
   const startOver = () => {
     clearRun();
     setPicks([]);
     setRerollsUsed({ team: 0, era: 0 });
     setSeed(null);
-    setChunk(null);
-    setPhase("spin");
+    if (index) spinTo(randomCell(index, Math.random));
   };
 
   if (error) {
@@ -115,40 +142,36 @@ export function RunContainer() {
     return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
   }
 
-  if (phase === "spin") {
-    return (
-      <SpinScreen
-        index={index}
-        round={round}
-        rerollsUsed={rerollsUsed}
-        onConsumeReroll={(type) =>
-          setRerollsUsed((r) => {
-            const next = { ...r, [type]: r[type] + 1 };
-            saveRun({ rerollsUsed: next, picks, ...(seed != null ? { seed } : {}) });
-            return next;
-          })
-        }
-        onConfirm={onConfirmCell}
-      />
+  if (phase === "result" || phase === "simulate") {
+    if (!result) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
+    return phase === "simulate" ? (
+      <SimulateScreen result={result} onDone={() => setPhase("result")} />
+    ) : (
+      <ResultScreen result={result} picks={picks} onReplay={startOver} />
     );
   }
 
-  if (phase === "draft") {
-    if (chunkLoading || !chunk) {
-      return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading roster…</p>;
-    }
-    return (
-      <DraftScreen chunk={chunk} picks={picks} round={round} onPickHitter={onPickHitter} onPickPitcher={onPickPitcher} />
-    );
+  if (phase === "spinning") {
+    if (!cell) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
+    return <SpinAnimation key={spinSeq} index={index} target={cell} round={round} onDone={() => setPhase("draft")} />;
   }
 
-  if (!result) {
-    return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
+  if (chunkLoading || !chunk) {
+    return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading roster…</p>;
   }
-
-  if (phase === "simulate") {
-    return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
-  }
-
-  return <ResultScreen result={result} picks={picks} onReplay={startOver} />;
+  return (
+    <DraftScreen
+      chunk={chunk}
+      picks={picks}
+      round={round}
+      rerollsUsed={rerollsUsed}
+      canRerollTeam={cell ? canRerollTeam(index, cell) : false}
+      canRerollEra={cell ? canRerollEra(index, cell) : false}
+      onRerollTeam={onRerollTeam}
+      onRerollEra={onRerollEra}
+      onRespin={onRespin}
+      onPickHitter={onPickHitter}
+      onPickPitcher={onPickPitcher}
+    />
+  );
 }

@@ -29,6 +29,8 @@ const pitcher = (id: string, role: "SP" | "RP"): PoolPitcher => ({
   stamina: 0.7,
   display: { year: 1990, team: "XXX", W: 18, L: 6, ERA: "2.50", G: 34, GS: 34, IP: 240, H: 200, BB: 50, SO: 220, HR: 15 },
 });
+// One position per hitter slot, so nine hitters fill the lineup under strict slotting.
+const POS9: string[][] = [["C"], ["1B"], ["2B"], ["3B"], ["SS"], ["LF"], ["CF"], ["RF"], ["DH"]];
 
 describe("hitterEligible", () => {
   it("DH takes anyone (DH-loose)", () => expect(hitterEligible("DH", ["C"])).toBe(true));
@@ -48,11 +50,9 @@ describe("autoSlotHitter", () => {
     const picks: DraftPick[] = [{ slot: "SS", playerId: "x", name: "x", kind: "hitter", tag: "" }];
     expect(autoSlotHitter(["SS"], picks)).toBe("DH");
   });
-  it("DH-loose: uses any open hitter slot when position + DH are full", () => {
+  it("returns null when the position and DH are both full (strict — no off-position fallback)", () => {
     const picks: DraftPick[] = (["SS", "DH"] as const).map((slot) => ({ slot, playerId: slot, name: slot, kind: "hitter", tag: "" }));
-    const got = autoSlotHitter(["SS"], picks);
-    expect(got).not.toBeNull();
-    expect(["C", "1B", "2B", "3B", "LF", "CF", "RF"]).toContain(got);
+    expect(autoSlotHitter(["SS"], picks)).toBeNull();
   });
 });
 
@@ -78,14 +78,15 @@ describe("drafting", () => {
     expect(draftHitter(h, "'27 NYY", after!)).toBeNull();
   });
 
-  it("returns null when the category is full", () => {
+  it("returns null when no eligible slot is open", () => {
     let picks: DraftPick[] = [];
-    for (let i = 0; i < 9; i++) {
-      const next = draftHitter(hitter(`h${i}`, ["DH"]), "", picks);
+    POS9.forEach((pos, i) => {
+      const next = draftHitter(hitter(`h${i}`, pos), "", picks);
       expect(next).not.toBeNull();
       picks = next!;
-    }
-    expect(draftHitter(hitter("h9", ["DH"]), "", picks)).toBeNull(); // lineup full
+    });
+    // lineup full: a 1B-only player has no open eligible slot (1B + DH taken).
+    expect(draftHitter(hitter("h9", ["1B"]), "", picks)).toBeNull();
   });
 
   it("needs counts down as slots fill", () => {
@@ -96,7 +97,7 @@ describe("drafting", () => {
 describe("buildSimRoster", () => {
   it("assembles a 9/3/1 roster from a complete draft", () => {
     let picks: DraftPick[] = [];
-    for (let i = 0; i < 9; i++) picks = draftHitter(hitter(`h${i}`, ["DH"]), "", picks)!;
+    POS9.forEach((pos, i) => (picks = draftHitter(hitter(`h${i}`, pos), "", picks)!));
     for (let i = 0; i < 3; i++) picks = draftPitcher(pitcher(`s${i}`, "SP"), "", picks)!;
     picks = draftPitcher(pitcher("rp", "RP"), "", picks)!;
 
@@ -116,7 +117,7 @@ describe("buildSimRoster", () => {
     const ops = ["0.700", "1.100", "0.850", "0.950", "0.600", "1.000", "0.800", "0.900", "0.750"];
     let picks: DraftPick[] = [];
     ops.forEach((o, i) => {
-      const h = hitter(`h${i}`, ["DH"]);
+      const h = hitter(`h${i}`, POS9[i]!);
       h.display.OPS = o;
       picks = draftHitter(h, "", picks)!;
     });

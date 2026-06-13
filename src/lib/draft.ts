@@ -22,11 +22,11 @@ export function hitterEligible(slot: Slot, pos: string[]): boolean {
 
 const isFilled = (picks: DraftPick[], slot: Slot) => picks.some((p) => p.slot === slot);
 
-/** The slot a hitter would take: first open slot they're eligible for, else (DH-loose)
- * any open hitter slot, else null when the lineup is full. */
+/** The slot a hitter would take: the first open slot they're eligible for (their
+ * listed positions, or DH which takes anyone). Returns null when every eligible
+ * slot — including DH — is full, so the player can't be drafted (greyed out). */
 export function autoSlotHitter(pos: string[], picks: DraftPick[]): Slot | null {
   for (const s of HITTER_SLOTS) if (!isFilled(picks, s) && hitterEligible(s, pos)) return s;
-  for (const s of HITTER_SLOTS) if (!isFilled(picks, s)) return s; // DH-loose fallback
   return null;
 }
 
