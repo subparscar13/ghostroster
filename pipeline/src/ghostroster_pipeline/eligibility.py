@@ -2,8 +2,16 @@
 
 Maps each player-season to a (franchise, decade) cell and keeps only seasons that
 clear the eligibility floor. Defaults per brief §3 (flagged tuning items): hitters
-≥ 20 G, SP ≥ 10 GS, RP ≥ 20 relief appearances. A pitcher is classed SP if any
-season qualifies as a starter, else RP (swingmen draft as starters).
+≥ 20 G *and* ≥ 50 PA, SP ≥ 10 GS, RP ≥ 20 relief appearances. A pitcher is classed
+SP if any season qualifies as a starter, else RP (swingmen draft as starters).
+
+The ≥ 50 PA floor is in addition to the brief's ≥ 20 G default: G counts any
+appearance (pinch-run, defense, *pitching*), so a games-only threshold leaks
+pitchers and deep-bench players into the hitter pool with tiny-sample, nonsensical
+rate vectors (e.g. a pitcher's 3-PA "season" → a 46% double rate). A modest PA
+floor removes that noise before it can corrupt M2 sim calibration. The exact value
+(50) is itself a flagged tuning lever — revisit alongside the other eligibility
+thresholds at M2.
 """
 
 from __future__ import annotations
@@ -13,6 +21,7 @@ import pandas as pd
 from .tables import Tables
 
 MIN_HITTER_G = 20
+MIN_HITTER_PA = 50
 MIN_SP_GS = 10
 MIN_RP_RELIEF = 20
 
@@ -50,7 +59,8 @@ def eligible_hitter_seasons(tables: Tables) -> pd.DataFrame:
     fmap = team_franchise_map(tables)
     bat = bat.merge(fmap, on=["yearID", "teamID"], how="inner")
     bat["decade"] = _decade(bat["yearID"])
-    return bat[bat["G"] >= MIN_HITTER_G].reset_index(drop=True)
+    pa = bat["AB"] + bat["BB"] + bat["HBP"] + bat.get("SF", 0) + bat.get("SH", 0)
+    return bat[(bat["G"] >= MIN_HITTER_G) & (pa >= MIN_HITTER_PA)].reset_index(drop=True)
 
 
 def eligible_pitcher_seasons(tables: Tables) -> pd.DataFrame:
