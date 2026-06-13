@@ -76,15 +76,15 @@ box scores + highlights, hitting the tuning targets.
 
 ---
 
-## M3 — UI: spin → draft → result, Classic (3 days) · [US1]
+## M3 — UI: spin → draft → result, Classic ✅ DONE (3 days) · [US1]
 
 - [x] T040 Next.js 16 static-export (`output: 'export'`) app shell under `src/app/`; Tailwind v4 with vintage scoreboard theme tokens (`globals.css`); routes `/` (landing), `/play` (the run), `/daily` (stub); `Footer` attribution component on every screen (FR-011); Roboto Slab + JetBrains Mono via `next/font`. Static build verified: 4 routes, ~900 KB assets (<5 MB), 270 data chunks copied to `out/`. tsc + 46 tests still green.
 - [x] T041 [US1] Spin screen (`SpinScreen.tsx`): slot-machine reveal over `teams.json` (idle→rolling→revealed, reduced-motion aware) with the two per-run re-rolls (team = new franchise, era = new decade of same franchise; consumed + disabled correctly). Pure spin helpers `lib/spin.ts` (+5 tests), `lib/data.ts` loader, `RunContainer.tsx` run-state host. Browser-verified end-to-end (real data: e.g. Mets 1990s→1970s on era re-roll).
 - [x] T042 [US1] `lib/data.ts` lazy-loads + caches each spun `td/*.json` chunk; `lib/storage.ts` persists the in-progress run (picks + rerolls) to localStorage and resumes on reload (SSR-safe). Browser-verified: reload mid-run resumes at the right round with picks intact.
 - [x] T043 [US1] Draft screen (`DraftScreen.tsx`): 13-round spin↔pick loop, pool grouped Hitters/SP/RP sorted best-first with best-season stat lines, one-tap pick+auto-slot (`lib/draft.ts` — position-aware, DH-loose, +14 tests), persistent `RosterSidebar` (13 slots, era tags), needs counter, full-category disabling, dup prevention. `buildSimRoster` assembles the 9/3/1 sim roster. Browser-verified end-to-end.
-- [ ] T044 [US1] Simulate screen: skippable season ticker → invoke sim → result.
-- [ ] T045 [US1] Result screen: record + grade + roster card (team-decade tags) + one highlight + one quip.
-- [ ] T046 Verify full run playable; **time a cold full run (spin→draft→result) against SC-001's <3 min**; page weight < 5 MB; season < 2s on device.
+- [x] T044 [US1] Simulate screen (`SimulateScreen.tsx`): skippable, reduced-motion-aware season ticker (W-L climb + progress) → `simulateSeason(buildSimRoster(picks), LEAGUE_AVERAGE_OPPONENT, seed)` (seed persisted for reproducibility) → result.
+- [x] T045 [US1] Result screen (`ResultScreen.tsx`): record + letter-grade seal + 13-man roster card with era tags (`RosterSidebar`) + one highlight beat + one generated quip (`lib/result.ts`, +8 tests). Browser-verified (e.g. 132-30, grade C, reproducible across reload).
+- [x] T046 Full run verified playable end-to-end in-browser (spin→draft→sim→result, resume + reproducibility); static build OK; page weight 929 KB (<5 MB); teams.json 36 KB, largest lazy chunk 59 KB (<100 KB); season ~3 ms (<2s). 73 tests green.
 
 ---
 

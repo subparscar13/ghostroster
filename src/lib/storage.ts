@@ -11,6 +11,7 @@ const RUN_KEY = "ghostroster:run:v1";
 export type PersistedRun = {
   rerollsUsed: { team: number; era: number };
   picks: DraftPick[];
+  seed?: number; // the season seed, set once the draft completes (reproducible result)
 };
 
 export function saveRun(run: PersistedRun): void {

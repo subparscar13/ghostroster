@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { loadChunk, loadTeamsIndex } from "@/lib/data";
-import { draftHitter, draftPitcher, isComplete } from "@/lib/draft";
+import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
 import { clearRun, loadRun, saveRun } from "@/lib/storage";
 import type { DraftPick, PoolHitter, PoolPitcher, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
+import { LEAGUE_AVERAGE_OPPONENT } from "@/sim/baseline";
+import { simulateSeason } from "@/sim/season";
 import { DraftScreen } from "./DraftScreen";
-import { RosterSidebar } from "./RosterSidebar";
+import { ResultScreen } from "./ResultScreen";
+import { SimulateScreen } from "./SimulateScreen";
 import { SpinScreen } from "./SpinScreen";
 
-type Phase = "spin" | "draft" | "simulate";
+type Phase = "spin" | "draft" | "simulate" | "result";
 type Rerolls = { team: number; era: number };
+
+const randomSeed = () => Math.floor(Math.random() * 0xffffffff) >>> 0;
 
 export function RunContainer() {
   const [index, setIndex] = useState<TeamsIndex | null>(null);
@@ -20,21 +25,33 @@ export function RunContainer() {
 
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [rerollsUsed, setRerollsUsed] = useState<Rerolls>({ team: 0, era: 0 });
+  const [seed, setSeed] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("spin");
 
   const [chunk, setChunk] = useState<TeamDecadeChunk | null>(null);
   const [chunkLoading, setChunkLoading] = useState(false);
 
-  // Load the index + resume any in-progress run (client-only; no SSR hydration risk).
   useEffect(() => {
     loadTeamsIndex().then(setIndex).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
     const saved = loadRun();
     if (saved) {
       setPicks(saved.picks);
       setRerollsUsed(saved.rerollsUsed);
-      if (isComplete(saved.picks)) setPhase("simulate");
+      if (saved.seed != null) setSeed(saved.seed);
+      if (isComplete(saved.picks)) setPhase("result"); // resume straight to result (skip ticker)
     }
   }, []);
+
+  // The season result — pure + memoized; identical for the same (picks, seed).
+  const result = useMemo(() => {
+    if (!isComplete(picks) || seed == null) return null;
+    try {
+      return simulateSeason(buildSimRoster(picks), LEAGUE_AVERAGE_OPPONENT, seed);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      return null;
+    }
+  }, [picks, seed]);
 
   const round = picks.length + 1;
 
@@ -54,9 +71,15 @@ export function RunContainer() {
 
   const commit = (next: DraftPick[]) => {
     setPicks(next);
-    saveRun({ rerollsUsed, picks: next });
-    if (isComplete(next)) setPhase("simulate");
-    else goSpin();
+    if (isComplete(next)) {
+      const s = seed ?? randomSeed();
+      setSeed(s);
+      setPhase("simulate");
+      saveRun({ rerollsUsed, picks: next, seed: s });
+    } else {
+      saveRun({ rerollsUsed, picks: next, ...(seed != null ? { seed } : {}) });
+      goSpin();
+    }
   };
 
   const onPickHitter = (h: PoolHitter, tag: string) => {
@@ -72,6 +95,7 @@ export function RunContainer() {
     clearRun();
     setPicks([]);
     setRerollsUsed({ team: 0, era: 0 });
+    setSeed(null);
     setChunk(null);
     setPhase("spin");
   };
@@ -79,8 +103,11 @@ export function RunContainer() {
   if (error) {
     return (
       <div className="mx-auto max-w-sm px-6 pt-16 text-center">
-        <p className="font-mono text-sm text-vintage">Something went wrong loading the data.</p>
+        <p className="font-mono text-sm text-vintage">Something went wrong.</p>
         <p className="mt-2 font-mono text-xs text-ink-faint">{error}</p>
+        <button onClick={startOver} className="mt-6 font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4">
+          Start over
+        </button>
       </div>
     );
   }
@@ -97,7 +124,7 @@ export function RunContainer() {
         onConsumeReroll={(type) =>
           setRerollsUsed((r) => {
             const next = { ...r, [type]: r[type] + 1 };
-            saveRun({ rerollsUsed: next, picks });
+            saveRun({ rerollsUsed: next, picks, ...(seed != null ? { seed } : {}) });
             return next;
           })
         }
@@ -111,34 +138,17 @@ export function RunContainer() {
       return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading roster…</p>;
     }
     return (
-      <DraftScreen
-        chunk={chunk}
-        picks={picks}
-        round={round}
-        onPickHitter={onPickHitter}
-        onPickPitcher={onPickPitcher}
-      />
+      <DraftScreen chunk={chunk} picks={picks} round={round} onPickHitter={onPickHitter} onPickPitcher={onPickPitcher} />
     );
   }
 
-  // simulate (placeholder until T044)
-  return (
-    <div className="mx-auto max-w-md px-4 pt-12 pb-10 text-center">
-      <p className="font-mono text-xs uppercase tracking-[0.25em] text-vintage">Roster complete</p>
-      <h1 className="mt-1 font-display text-3xl font-medium uppercase">13 ghosts assembled</h1>
-      <div className="my-5 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">
-        <RosterSidebar picks={picks} />
-      </div>
-      <p className="font-mono text-sm text-ink-soft">Season simulation lands in T044.</p>
-      <button
-        onClick={startOver}
-        className="mt-6 font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4"
-      >
-        Start a new run
-      </button>
-      <Link href="/" className="mt-3 block font-mono text-xs uppercase tracking-widest text-ink-faint underline underline-offset-4">
-        Home
-      </Link>
-    </div>
-  );
+  if (!result) {
+    return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
+  }
+
+  if (phase === "simulate") {
+    return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
+  }
+
+  return <ResultScreen result={result} picks={picks} onReplay={startOver} />;
 }
