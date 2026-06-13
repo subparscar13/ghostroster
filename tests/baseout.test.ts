@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { applyOutcome, newInning, playHalfInning } from "../src/sim/baseout.ts";
-import { mulberry32 } from "../src/sim/rng.ts";
-import type { Bases, BaseOutState, Runner } from "../src/sim/baseout.ts";
-import type { Outcome } from "../src/sim/types.ts";
+import { applyOutcome, newInning, playHalfInning } from "../src/sim/baseout";
+import { mulberry32 } from "../src/sim/rng";
+import type { Bases, BaseOutState, Runner } from "../src/sim/baseout";
+import type { Outcome } from "../src/sim/types";
 
 // Distinct ids so a test can tell *which* runner scored / advanced.
 const R1 = 10;

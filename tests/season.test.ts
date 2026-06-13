@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { LEAGUE_AVERAGE_OPPONENT, NEUTRAL } from "../src/sim/baseline.ts";
-import { playGame } from "../src/sim/game.ts";
-import { mulberry32 } from "../src/sim/rng.ts";
-import { computeGrade, simulateSeason } from "../src/sim/season.ts";
-import type { Hitter, OutcomeVector, Pitcher, Roster } from "../src/sim/types.ts";
+import { LEAGUE_AVERAGE_OPPONENT, NEUTRAL } from "../src/sim/baseline";
+import { playGame } from "../src/sim/game";
+import { mulberry32 } from "../src/sim/rng";
+import { computeGrade, simulateSeason } from "../src/sim/season";
+import type { Hitter, OutcomeVector, Pitcher, Roster } from "../src/sim/types";
 
 const GOD_BAT: OutcomeVector = { bb: 0.2, b1: 0.18, b2: 0.08, b3: 0.01, hr: 0.1, out: 0.43 };
 const WEAK_BAT: OutcomeVector = { bb: 0.04, b1: 0.1, b2: 0.02, b3: 0.002, hr: 0.005, out: 0.833 };

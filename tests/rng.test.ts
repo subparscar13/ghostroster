@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hashSeed, mulberry32 } from "../src/sim/rng.ts";
+import { hashSeed, mulberry32 } from "../src/sim/rng";
 
 /**
  * Golden-master sequences for mulberry32 (T031). These are the canonical outputs of

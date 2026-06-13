@@ -10,8 +10,8 @@
  * opaque to this module — callers use the batter's lineup slot.
  */
 
-import type { Rng } from "./rng.ts";
-import type { Outcome } from "./types.ts";
+import type { Rng } from "./rng";
+import type { Outcome } from "./types";
 
 /**
  * Probability the runner on 2nd scores on a single (else holds at 3rd). A flagged

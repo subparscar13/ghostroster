@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { LEAGUE_AVERAGE_OPPONENT } from "../src/sim/baseline.ts";
-import { simulateSeason } from "../src/sim/season.ts";
-import { FIXED_ROSTER, FIXED_SEED, seasonDigest } from "./fixtures.ts";
+import { LEAGUE_AVERAGE_OPPONENT } from "../src/sim/baseline";
+import { simulateSeason } from "../src/sim/season";
+import { FIXED_ROSTER, FIXED_SEED, seasonDigest } from "./fixtures";
 
 /**
  * Golden master (T036). The fixed roster + seed must always produce this exact

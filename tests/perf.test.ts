@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { LEAGUE_AVERAGE_OPPONENT } from "../src/sim/baseline.ts";
-import { simulateSeason } from "../src/sim/season.ts";
-import { FIXED_ROSTER } from "./fixtures.ts";
+import { LEAGUE_AVERAGE_OPPONENT } from "../src/sim/baseline";
+import { simulateSeason } from "../src/sim/season";
+import { FIXED_ROSTER } from "./fixtures";
 
 /**
  * Performance gate (T037, constitution): a full 162-game season must run in < 2s on

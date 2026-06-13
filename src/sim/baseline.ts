@@ -1,4 +1,4 @@
-import type { OpponentModel, OutcomeVector } from "./types.ts";
+import type { OpponentModel, OutcomeVector } from "./types";
 
 /**
  * The neutral baseline run environment (per-PA), summing to 1.0.

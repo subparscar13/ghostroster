@@ -13,10 +13,10 @@
  * vector, and the same function does the full matchup for P2 PvP.
  */
 
-import { NEUTRAL } from "./baseline.ts";
-import type { Rng } from "./rng.ts";
-import type { Outcome, OutcomeVector } from "./types.ts";
-import { OUTCOMES } from "./types.ts";
+import { NEUTRAL } from "./baseline";
+import type { Rng } from "./rng";
+import type { Outcome, OutcomeVector } from "./types";
+import { OUTCOMES } from "./types";
 
 /**
  * Combine batter and pitcher vectors via the odds ratio against `league`.

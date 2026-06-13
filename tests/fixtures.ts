@@ -4,8 +4,8 @@
  * change, the golden master must be re-pinned deliberately.
  */
 
-import { hashSeed } from "../src/sim/rng.ts";
-import type { Hitter, OutcomeVector, Pitcher, Roster, SeasonResult } from "../src/sim/types.ts";
+import { hashSeed } from "../src/sim/rng";
+import type { Hitter, OutcomeVector, Pitcher, Roster, SeasonResult } from "../src/sim/types";
 
 /** Build an outcome vector from its non-out components; `out` absorbs the rest. */
 function vec(bb: number, b1: number, b2: number, b3: number, hr: number): OutcomeVector {

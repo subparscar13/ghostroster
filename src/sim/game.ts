@@ -13,11 +13,11 @@
  * the slight offensive inflation is absorbed by M2 run-environment tuning (SC-004).
  */
 
-import { applyOutcome, newInning } from "./baseout.ts";
-import { NEUTRAL } from "./baseline.ts";
-import { resolvePA } from "./resolve.ts";
-import type { Rng } from "./rng.ts";
-import type { BattingLine, GameLog, OpponentModel, OutcomeVector, Roster } from "./types.ts";
+import { applyOutcome, newInning } from "./baseout";
+import { NEUTRAL } from "./baseline";
+import { resolvePA } from "./resolve";
+import type { Rng } from "./rng";
+import type { BattingLine, GameLog, OpponentModel, OutcomeVector, Roster } from "./types";
 
 function emptyLine(playerId: string): BattingLine {
   return { playerId, pa: 0, h: 0, b2: 0, b3: 0, hr: 0, bb: 0, rbi: 0, r: 0 };

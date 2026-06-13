@@ -7,9 +7,9 @@
  * inputs reproduce an identical result on every engine.
  */
 
-import { playGame } from "./game.ts";
-import { mulberry32 } from "./rng.ts";
-import type { GameLog, Highlights, OpponentModel, Roster, SeasonResult } from "./types.ts";
+import { playGame } from "./game";
+import { mulberry32 } from "./rng";
+import type { GameLog, Highlights, OpponentModel, Roster, SeasonResult } from "./types";
 
 export const GAMES = 162;
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { NEUTRAL } from "../src/sim/baseline.ts";
-import { blend, resolvePA, sample } from "../src/sim/resolve.ts";
-import { mulberry32 } from "../src/sim/rng.ts";
-import type { OutcomeVector } from "../src/sim/types.ts";
-import { OUTCOMES } from "../src/sim/types.ts";
+import { NEUTRAL } from "../src/sim/baseline";
+import { blend, resolvePA, sample } from "../src/sim/resolve";
+import { mulberry32 } from "../src/sim/rng";
+import type { OutcomeVector } from "../src/sim/types";
+import { OUTCOMES } from "../src/sim/types";
 
 const RUTH: OutcomeVector = { bb: 0.2, b1: 0.1, b2: 0.06, b3: 0.01, hr: 0.13, out: 0.5 };
 

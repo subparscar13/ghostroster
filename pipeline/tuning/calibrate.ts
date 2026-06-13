@@ -17,10 +17,10 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { LEAGUE_AVERAGE_OPPONENT, NEUTRAL } from "../../src/sim/baseline.ts";
-import { mulberry32 } from "../../src/sim/rng.ts";
-import { simulateSeason } from "../../src/sim/season.ts";
-import type { Hitter, OutcomeVector, Pitcher, Roster } from "../../src/sim/types.ts";
+import { LEAGUE_AVERAGE_OPPONENT, NEUTRAL } from "../../src/sim/baseline";
+import { mulberry32 } from "../../src/sim/rng";
+import { simulateSeason } from "../../src/sim/season";
+import type { Hitter, OutcomeVector, Pitcher, Roster } from "../../src/sim/types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, "..", "..", "public", "data");
