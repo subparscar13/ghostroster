@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Vintage scoreboard palette + fonts as Tailwind v4 theme tokens. The app owns its
+   cream background (no host dark-mode adaptation — it's a branded surface). */
+@theme {
+  --color-paper: #f1e7cf;
+  --color-paper-dark: #e7d9b8;
+  --color-ink: #2a2118;
+  --color-ink-soft: #5a4a32;
+  --color-ink-faint: #7a6a4a;
+  --color-vintage: #9e2b25;
+  --color-navy: #1f3a5f;
+  --color-gold: #c08a2d;
+  --color-gold-ink: #8a5a14;
+  --color-faded: #c9b896;
+
+  --font-display: var(--font-roboto-slab), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "Courier New", monospace;
+}
+
+html,
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
