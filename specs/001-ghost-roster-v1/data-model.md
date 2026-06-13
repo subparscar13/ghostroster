@@ -62,7 +62,7 @@ with a display block (raw best-season line for the draft UI) and a sim block
       "display": {                      // raw best-season line for the draft UI
         "year": 1921, "team": "NYA",
         "G": 152, "PA": 693, "AB": 540, "H": 204, "2B": 44, "3B": 16,
-        "HR": 59, "BB": 145, "HBP": 4, "SO": 81, "AVG": ".378", "OPS": "1.359"
+        "HR": 59, "BB": 145, "HBP": 4, "SO": 81, "AVG": "0.378", "OPS": "1.359"
       },
       "vector": { "bb": 0.0, "b1": 0.0, "b2": 0.0, "b3": 0.0, "hr": 0.0, "out": 0.0 }
     }
@@ -94,7 +94,7 @@ that season (Lahman lacks per-pitcher 2B/3B allowed) — flagged tuning item.
 // All pure; no I/O, no globals, no Math.random — RNG is mulberry32(seed).
 type Hitter   = { playerId: string; name: string; pos: string[]; vector: OutcomeVector };
 type Pitcher  = { playerId: string; name: string; role: 'SP'|'RP'; allowed: OutcomeVector; stamina: number };
-type Roster   = { lineup: Hitter[9]; rotation: Pitcher[3]; bullpen: Pitcher[1] };
+type Roster   = { lineup: Hitter[]; rotation: Pitcher[]; bullpen: Pitcher[] }; // fixed lengths 9 / 3 / 1 — express as tuples or a length invariant at M2 (TS has no `Hitter[9]` syntax)
 type OpponentModel = { batter: OutcomeVector; pitcher: OutcomeVector }; // era-average league team (v1)
 
 type LineScore   = { runs: number; hits: number; innings: number[] };
@@ -139,7 +139,9 @@ function simulateSeason(roster: Roster, opponent: OpponentModel, seed: number): 
 
 ## Flagged tuning items (do not silently resolve)
 
-Pitcher eligibility (≥10 GS) + RP usage rule; 2B/3B-allowed league-split estimate;
-z-score fallback for outlier seasons; advancement-table refinements + no-DP/no-SF
-+ no-RP-fatigue levers; letter-grade scale; run-environment ±10% / 162-0 top-1–3%
-/ 145–158 near-miss calibration (SC-004).
+Hitter eligibility ≥20 G + ≥50 PA floor (the PA floor was set during M1, commit
+dc33ae3, to exclude tiny-sample pitcher/bench vectors); pitcher eligibility
+(≥10 GS) + RP usage rule; 2B/3B-allowed league-split estimate; z-score fallback
+for outlier seasons; advancement-table refinements + no-DP/no-SF + no-RP-fatigue
+levers; letter-grade scale; run-environment ±10% / 162-0 top-1–3% / 145–158
+near-miss calibration (SC-004).

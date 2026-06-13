@@ -24,7 +24,7 @@ season ticker → quips → box-score depth (keep line scores) → grade system.
 
 ---
 
-## M1 — Pipeline: Lahman → JSON (2 days) 🎯 foundation for all stories
+## M1 — Pipeline: Lahman → JSON ✅ DONE (2 days) 🎯 foundation for all stories
 
 **Goal**: An offline Python pipeline that downloads the current Lahman edition,
 verifies its CC BY-SA license, and emits `public/data/teams.json` + per-team-decade
@@ -42,7 +42,7 @@ gate as automated tests.
 - [x] T013 [US1] `download.py` — fetch the current Lahman edition into `.cache/` (Lahman CSV/SQLite distribution or pybaseball's Lahman loader; **never BRef/MLB-API**); extract license text + edition year; write `public/data/ATTRIBUTION.json`; raise on license mismatch.
 
 ### Transform
-- [x] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥20 G, SP ≥10 GS, RP ≥20 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Thresholds are flagged tuning defaults.)
+- [x] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥20 G **and ≥50 PA**, SP ≥10 GS, RP ≥20 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Thresholds are flagged tuning defaults; the ≥50 PA floor was added during M1 to keep pitchers/deep-bench players with tiny-sample rate vectors out of the hitter pool — commit dc33ae3.)
 - [x] T015 [P] [US1] `stats.py` — select each player's **best single season** with that team in that decade; build the `display` block (raw line) per data-model.
 - [x] T016 [US1] `vectors.py` — era-adjusted, league-relative `OutcomeVector` for hitters (HBP→BB) and pitchers (from BB/H/HR/IP; 2B/3B-allowed via league split); pitcher `stamina`. (depends on T015)
 
@@ -52,9 +52,10 @@ gate as automated tests.
 ### Acceptance checks as automated tests
 - [x] T018 [P] [US1] `tests/test_payload_size.py` — acceptance check 1 (total `public/data/` < 20 MB) + check 2 (every `td/*.json` < 100 KB).
 - [x] T019 [P] [US1] `tests/test_eligibility_floor.py` — acceptance check 3 (every `teams.json` cell has ≥9H/≥3SP/≥1RP; sub-floor cells absent).
-- [x] T020 [P] [US1] `tests/test_known_vectors.py` — acceptance check 4 — logic verified vs. hand-computed Babe Ruth 1921 fixture; the 5 real-player spot-checks land with the real edition.
+- [x] T020 [P] [US1] `tests/test_known_vectors.py` — acceptance check 4 — logic verified vs. hand-computed Babe Ruth 1921 fixture. (Open hardening follow-up tracked as T023.)
 - [x] T021 [P] [US1] `tests/test_determinism.py` — run pipeline twice → byte-identical JSON.
-- [ ] T022 [US1] Run full pipeline on the real edition; commit `public/data/`. **M1 exit gate — pending operator's box.com download + `--pin`.**
+- [x] T022 [US1] Run full pipeline on the real (lahman-2025) edition; commit `public/data/` (commit dc33ae3). **M1 exit gate met** — 4 acceptance checks + determinism + license gate green against the real edition (payload 9.74 MB, max chunk 60.8 KB, 270 cells emitted / 233 below floor).
+- [ ] T023 [US1] (hardening, open) Add 5 real-player spot-check vectors to `tests/test_known_vectors.py` against the committed real edition — T020 currently covers only the synthetic Ruth fixture.
 
 ---
 
@@ -71,7 +72,7 @@ box scores + highlights, hitting the tuning targets.
 - [ ] T035 [US2] Box-score bookkeeping: line scores, batting lines, season highlights, grade.
 - [ ] T036 [US1] Golden-master tests (fixed seed+roster → exact record + box-score hash) + cross-browser RNG reproduction test.
 - [ ] T037 Performance test: 162-game season < 2s (mid-range phone budget).
-- [ ] T038 Tuning notebook in `pipeline/tuning/`: 10K optimal-play runs; calibrate to SC-004 (run env ±10%, 162-0 top 1–3%, 145–158 band). Tune advancement table only if run env fails; document the z-score fallback decision.
+- [ ] T038 Tuning notebook in `pipeline/tuning/`: 10K optimal-play runs; calibrate to SC-004 (run env ±10%, 162-0 top 1–3%, 145–158 band). Tune advancement table only if run env fails; document the z-score fallback decision. **Bridge decision (resolve at T030):** the notebook is Python but the sim is TS — run the TS sim under Node to emit a run-distribution JSON the notebook consumes, vs. doing calibration in TS. Decide before building the harness.
 
 ---
 
@@ -83,7 +84,7 @@ box scores + highlights, hitting the tuning targets.
 - [ ] T043 [US1] Draft screen: 13 rounds, eligible players w/ best-season stats, pick+slot in one action, persistent roster sidebar.
 - [ ] T044 [US1] Simulate screen: skippable season ticker → invoke sim → result.
 - [ ] T045 [US1] Result screen: record + grade + roster card (team-decade tags) + one highlight + one quip.
-- [ ] T046 Verify full run playable; page weight < 5 MB; season < 2s on device.
+- [ ] T046 Verify full run playable; **time a cold full run (spin→draft→result) against SC-001's <3 min**; page weight < 5 MB; season < 2s on device.
 
 ---
 
@@ -99,7 +100,7 @@ box scores + highlights, hitting the tuning targets.
 ## M5 — Polish, analytics, deploy (1.5 days) · all
 
 - [ ] T060 Plausible-class privacy-light analytics (completion, share, daily participation).
-- [ ] T061 Final attribution/disclaimer audit on every screen; tip-jar link.
+- [ ] T061 Final attribution/disclaimer audit on every screen; tip-jar link; **confirm FR-012 text-only (no logos/marks/photos) across all screens**.
 - [ ] T062 Deploy to Cloudflare Pages (static export); verify offline-after-load.
 - [ ] T063 Launch posts + portfolio writeup (spec→ship). *(Prereq: ghostroster.app registered — Justin's action, time-sensitive.)*
 
@@ -113,6 +114,7 @@ box scores + highlights, hitting the tuning targets.
 
 ## Flagged tuning items (carried, not resolved)
 
-Pitcher eligibility/RP usage defaults (T014, T034); 2B/3B-allowed league split
-(T016); z-score fallback + advancement table (T038); grade scale (T035/T045);
-"best team today" solver (P1, out of v1); ghostroster.app + handles (T063, Justin).
+Hitter eligibility ≥20 G **+ ≥50 PA** floor & pitcher/RP usage defaults (T014,
+T034); 2B/3B-allowed league split (T016); z-score fallback + advancement table
+(T038); grade scale (T035/T045); "best team today" solver (P1, out of v1);
+ghostroster.app + handles (T063, Justin).

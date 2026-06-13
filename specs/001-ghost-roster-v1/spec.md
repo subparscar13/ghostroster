@@ -114,6 +114,6 @@ A returning player opens the daily challenge: the same seed for everyone that da
 - Players have a modern mobile or desktop browser; no native app is provided (PRD non-goal).
 - Anonymous, local-storage-only state is acceptable for v1; no accounts, leaderboard, or cross-device sync (those are P1, deferred).
 - The current Lahman edition supplies sufficient eligible players per team-decade to populate a worthwhile spin index; cells below the eligibility floor are simply excluded.
-- Eligibility thresholds (hitters ≥ 20 G, SP ≥ 10 starts, RP ≥ 20 relief appearances) and the letter-grade scale are reasonable defaults, flagged for tuning rather than treated as final.
+- Eligibility thresholds (hitters ≥ 20 G **and ≥ 50 PA**, SP ≥ 10 starts, RP ≥ 20 relief appearances) and the letter-grade scale are reasonable defaults, flagged for tuning rather than treated as final. (The ≥ 50 PA hitter floor was added during M1 — see data-model flagged items — to exclude pitchers/deep-bench players whose tiny-sample rate vectors would otherwise pollute the hitter pool and M2 calibration.)
 - The opponent in v1 is an era-average league team; the second-roster (PvP) path is a deferred P2 composition over the same pure sim.
 - Blind/IQ mode, daily leaderboard, streak tracking, and a "best possible team today" reveal are out of scope for v1 (P1+).
