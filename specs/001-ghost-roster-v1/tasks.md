@@ -59,7 +59,7 @@ gate as automated tests.
 
 ---
 
-## M2 — Sim engine + tuning (4 days) — the risk milestone · [US1][US2]
+## M2 — Sim engine + tuning ✅ DONE (4 days) — the risk milestone · [US1][US2]
 
 **Goal**: Pure seeded `simulateSeason(roster, opponent, seed)` producing record +
 box scores + highlights, hitting the tuning targets.
@@ -72,7 +72,7 @@ box scores + highlights, hitting the tuning targets.
 - [x] T035 [US2] Box-score bookkeeping in `game.ts` (line scores, per-slot batting lines with runner-id run attribution) + `computeHighlights`/`computeGrade` in `season.ts`. Grade scale is the flagged default (last cut-order item).
 - [x] T036 [US1] Golden-master tests (`tests/golden.test.ts` + `tests/fixtures.ts`): fixed roster+seed → pinned record (127-35), season digest, and highlights. Cross-browser RNG reproduction guaranteed by the pinned mulberry32 stream (`rng.test.ts`) + int-only arithmetic (SC-003).
 - [x] T037 Performance test (`tests/perf.test.ts`): 162-game season ~3 ms/season on dev (<<2s phone budget); asserts a 50 ms/season ceiling to catch regressions.
-- [ ] T038 Tuning notebook in `pipeline/tuning/`: 10K optimal-play runs; calibrate to SC-004 (run env ±10%, 162-0 top 1–3%, 145–158 band). Tune advancement table only if run env fails; document the z-score fallback decision. **Bridge decision (resolve at T030):** the notebook is Python but the sim is TS — run the TS sim under Node to emit a run-distribution JSON the notebook consumes, vs. doing calibration in TS. Decide before building the harness.
+- [x] T038 Calibration harness `pipeline/tuning/calibrate.ts` (TS, runs the shipped sim — single source of truth) + `calibration-report.md` + `calibration.json`. **Bridge decision: resolved as a TS harness** (no Python notebook — avoids reimplementing the sim). Results: SC-004.1 ✅ (.497 win%, ~4.1 R/G), SC-004.3 ✅ (83.5% of best-pick drafts in 145–158), SC-004.2 ◑ (162-0 at 0.68%, just under 1–3%). Finding: offense levers don't move the 162-0 rate (variance-gated) — left advancement table/z-score at defaults; harness under-measures optimal play by ignoring re-rolls (flagged follow-up). No sim distortion.
 
 ---
 

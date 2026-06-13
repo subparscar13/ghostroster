@@ -13,6 +13,15 @@
 import type { Rng } from "./rng.ts";
 import type { Outcome } from "./types.ts";
 
+/**
+ * Probability the runner on 2nd scores on a single (else holds at 3rd). A flagged
+ * tuning lever (data-model "advancement-table refinements"), kept at the natural
+ * 0.50. M2 calibration found this lever moves the run environment but NOT the
+ * 162-0 rate (SC-004.2), which is gated by per-game win-probability variance, not
+ * run level — so it was left at 0.50. See pipeline/tuning/calibration-report.md.
+ */
+export const SINGLE_SEND_PROB = 0.5;
+
 /** Identifier for a baserunner — opaque here; the game layer uses the lineup slot. */
 export type Runner = number;
 
@@ -69,7 +78,7 @@ export function applyOutcome(
       if (third !== null) scored.push(third);
       let t: Runner | null = null;
       if (second !== null) {
-        if (rng() < 0.5) scored.push(second);
+        if (rng() < SINGLE_SEND_PROB) scored.push(second);
         else t = second;
       }
       next = { first: batter, second: first, third: t };
