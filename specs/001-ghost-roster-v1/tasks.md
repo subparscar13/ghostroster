@@ -68,8 +68,8 @@ box scores + highlights, hitting the tuning targets.
 - [x] T031 [US1] mulberry32 RNG module (`src/sim/rng.ts`) + `hashSeed` for the daily seed; golden-master test pinning exact sequences (constitution II cross-browser reproduction).
 - [x] T032 [US1] PA resolver (`src/sim/resolve.ts`): odds-ratio (log5) batter×pitcher÷league blend + seeded `sample`; `src/sim/baseline.ts` NEUTRAL baseline pinned to the pipeline's `vectors.py` + v1 league-average `OpponentModel`. Plus `src/sim/types.ts` (data-model mirror).
 - [x] T033 [US1] 24-state base-out machine (`src/sim/baseout.ts`) + the fixed/documented advancement table (data-model); `playHalfInning` to 3 outs. (Extra-innings continuation lives in T034 game assembly.)
-- [ ] T034 [US1] Rotation cycling (SP1→3) + RP innings 7–9; 162-game season assembly.
-- [ ] T035 [US2] Box-score bookkeeping: line scores, batting lines, season highlights, grade.
+- [x] T034 [US1] `src/sim/game.ts` (full-game assembly: SP innings 1–6, RP 7+, full-9 both sides + extras) and `src/sim/season.ts` `simulateSeason(roster, opponent, seed)` cycling SP1→SP2→SP3 over 162 games. Pure/seeded entry point + roster validation. (Walk-off/skip-bottom-9 omitted — flagged simplification.)
+- [x] T035 [US2] Box-score bookkeeping in `game.ts` (line scores, per-slot batting lines with runner-id run attribution) + `computeHighlights`/`computeGrade` in `season.ts`. Grade scale is the flagged default (last cut-order item).
 - [ ] T036 [US1] Golden-master tests (fixed seed+roster → exact record + box-score hash) + cross-browser RNG reproduction test.
 - [ ] T037 Performance test: 162-game season < 2s (mid-range phone budget).
 - [ ] T038 Tuning notebook in `pipeline/tuning/`: 10K optimal-play runs; calibrate to SC-004 (run env ±10%, 162-0 top 1–3%, 145–158 band). Tune advancement table only if run env fails; document the z-score fallback decision. **Bridge decision (resolve at T030):** the notebook is Python but the sim is TS — run the TS sim under Node to emit a run-distribution JSON the notebook consumes, vs. doing calibration in TS. Decide before building the harness.

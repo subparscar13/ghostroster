@@ -2,102 +2,107 @@ import { describe, expect, it } from "vitest";
 
 import { applyOutcome, newInning, playHalfInning } from "../src/sim/baseout.ts";
 import { mulberry32 } from "../src/sim/rng.ts";
-import type { Bases, BaseOutState } from "../src/sim/baseout.ts";
+import type { Bases, BaseOutState, Runner } from "../src/sim/baseout.ts";
 import type { Outcome } from "../src/sim/types.ts";
 
-const bases = (first: boolean, second: boolean, third: boolean): Bases => ({ first, second, third });
+// Distinct ids so a test can tell *which* runner scored / advanced.
+const R1 = 10;
+const R2 = 11;
+const R3 = 12;
+const BAT = 99; // the batter putting the ball in play
+
+const bases = (first: Runner | null, second: Runner | null, third: Runner | null): Bases => ({ first, second, third });
 const state = (b: Bases, outs = 0): BaseOutState => ({ bases: b, outs });
-const loaded = bases(true, true, true);
-const never = () => 0; // rng stub; 0 < 0.5 → single sends the runner from 2nd home
+const loaded = bases(R1, R2, R3);
+const empty = bases(null, null, null);
+const send = () => 0.4; // rng < 0.5 → the single sends the runner from 2nd home
+const hold = () => 0.9; // rng >= 0.5 → the runner from 2nd holds at 3rd
 
 describe("applyOutcome", () => {
   it("OUT records an out and leaves runners", () => {
-    const r = applyOutcome(state(loaded, 1), "out", never);
-    expect(r.runs).toBe(0);
+    const r = applyOutcome(state(loaded, 1), "out", BAT, send);
+    expect(r.scored).toEqual([]);
     expect(r.state.outs).toBe(2);
     expect(r.state.bases).toEqual(loaded);
   });
 
-  it("HR clears the bases and scores everyone plus the batter", () => {
-    const r = applyOutcome(state(loaded), "hr", never);
-    expect(r.runs).toBe(4);
-    expect(r.state.bases).toEqual(bases(false, false, false));
+  it("HR clears the bases and scores every runner plus the batter", () => {
+    const r = applyOutcome(state(loaded), "hr", BAT, send);
+    expect(r.scored).toEqual([R1, R2, R3, BAT]);
+    expect(r.state.bases).toEqual(empty);
   });
 
   it("triple scores all runners and leaves the batter on 3rd", () => {
-    const r = applyOutcome(state(loaded), "b3", never);
-    expect(r.runs).toBe(3);
-    expect(r.state.bases).toEqual(bases(false, false, true));
+    const r = applyOutcome(state(loaded), "b3", BAT, send);
+    expect(r.scored).toEqual([R1, R2, R3]);
+    expect(r.state.bases).toEqual(bases(null, null, BAT));
   });
 
-  it("double scores runners from 2nd/3rd and sends 1st to 3rd", () => {
-    const r = applyOutcome(state(loaded), "b2", never);
-    expect(r.runs).toBe(2); // from 2nd and 3rd
-    expect(r.state.bases).toEqual(bases(false, true, true)); // batter→2nd, 1st→3rd
+  it("double scores runners from 2nd/3rd, sends 1st to 3rd, batter to 2nd", () => {
+    const r = applyOutcome(state(loaded), "b2", BAT, send);
+    expect(r.scored).toEqual([R3, R2]);
+    expect(r.state.bases).toEqual(bases(null, BAT, R1));
   });
 
   describe("single", () => {
-    it("scores the runner from 3rd and sends the runner from 2nd home when rng < 0.5", () => {
-      const r = applyOutcome(state(bases(false, true, true)), "b1", () => 0.4);
-      expect(r.runs).toBe(2); // 3rd scores, 2nd scores
-      expect(r.state.bases).toEqual(bases(true, false, false));
+    it("scores 3rd and sends the runner from 2nd home when rng < 0.5", () => {
+      const r = applyOutcome(state(bases(null, R2, R3)), "b1", BAT, send);
+      expect(r.scored).toEqual([R3, R2]);
+      expect(r.state.bases).toEqual(bases(BAT, null, null));
     });
 
     it("holds the runner from 2nd at 3rd when rng >= 0.5", () => {
-      const r = applyOutcome(state(bases(false, true, false)), "b1", () => 0.9);
-      expect(r.runs).toBe(0);
-      expect(r.state.bases).toEqual(bases(true, false, true)); // batter→1st, 2nd→3rd
+      const r = applyOutcome(state(bases(null, R2, null)), "b1", BAT, hold);
+      expect(r.scored).toEqual([]);
+      expect(r.state.bases).toEqual(bases(BAT, null, R2)); // batter→1st, 2nd→3rd
     });
 
     it("advances the runner from 1st to 2nd", () => {
-      const r = applyOutcome(state(bases(true, false, false)), "b1", never);
-      expect(r.runs).toBe(0);
-      expect(r.state.bases).toEqual(bases(true, true, false));
+      const r = applyOutcome(state(bases(R1, null, null)), "b1", BAT, send);
+      expect(r.scored).toEqual([]);
+      expect(r.state.bases).toEqual(bases(BAT, R1, null));
     });
   });
 
   describe("walk (force only)", () => {
-    it("bases loaded forces in a run and stays loaded", () => {
-      const r = applyOutcome(state(loaded), "bb", never);
-      expect(r.runs).toBe(1);
-      expect(r.state.bases).toEqual(loaded);
+    it("bases loaded forces in the runner from 3rd and stays loaded", () => {
+      const r = applyOutcome(state(loaded), "bb", BAT, send);
+      expect(r.scored).toEqual([R3]);
+      expect(r.state.bases).toEqual(bases(BAT, R1, R2));
     });
 
     it("runners on the corners do not score — bases load, no run", () => {
-      const r = applyOutcome(state(bases(true, false, true)), "bb", never);
-      expect(r.runs).toBe(0);
-      expect(r.state.bases).toEqual(loaded);
+      const r = applyOutcome(state(bases(R1, null, R3)), "bb", BAT, send);
+      expect(r.scored).toEqual([]);
+      expect(r.state.bases).toEqual(bases(BAT, R1, R3)); // 3rd not forced
     });
 
     it("empty bases just puts the batter on first", () => {
-      const r = applyOutcome(state(bases(false, false, false)), "bb", never);
-      expect(r.runs).toBe(0);
-      expect(r.state.bases).toEqual(bases(true, false, false));
+      const r = applyOutcome(state(empty), "bb", BAT, send);
+      expect(r.scored).toEqual([]);
+      expect(r.state.bases).toEqual(bases(BAT, null, null));
     });
   });
 });
 
 describe("playHalfInning", () => {
   it("ends at exactly 3 outs with no scoring on an all-out inning", () => {
-    const runs = playHalfInning(() => "out", never);
-    expect(runs).toBe(0);
+    expect(playHalfInning(() => ({ outcome: "out", batter: 0 }), send)).toBe(0);
   });
 
   it("scores a run when hits precede the three outs", () => {
     const script: Outcome[] = ["hr", "out", "out", "out"];
     let i = 0;
-    const runs = playHalfInning(() => script[i++]!, never);
+    const runs = playHalfInning(() => ({ outcome: script[i++]!, batter: i }), send);
     expect(runs).toBe(1);
   });
 
   it("is deterministic for a fixed seed (the single's 50% send is the only RNG use)", () => {
-    // A finite script forces the three outs; the RNG only decides the runner-from-2nd
-    // send on each single, so the same seed must reproduce the same run total.
     const scripted = (seed: number) => {
       const rng = mulberry32(seed);
       const script: Outcome[] = ["b1", "b1", "out", "b2", "out", "b1", "out"];
       let i = 0;
-      return playHalfInning(() => script[i++]!, () => rng());
+      return playHalfInning(() => ({ outcome: script[i]!, batter: i++ }), () => rng());
     };
     expect(scripted(5)).toBe(scripted(5));
   });
