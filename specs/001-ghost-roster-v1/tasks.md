@@ -79,7 +79,7 @@ box scores + highlights, hitting the tuning targets.
 ## M3 — UI: spin → draft → result, Classic (3 days) · [US1]
 
 - [x] T040 Next.js 16 static-export (`output: 'export'`) app shell under `src/app/`; Tailwind v4 with vintage scoreboard theme tokens (`globals.css`); routes `/` (landing), `/play` (the run), `/daily` (stub); `Footer` attribution component on every screen (FR-011); Roboto Slab + JetBrains Mono via `next/font`. Static build verified: 4 routes, ~900 KB assets (<5 MB), 270 data chunks copied to `out/`. tsc + 46 tests still green.
-- [ ] T041 [US1] Spin screen: slot-machine animation over `teams.json`; 1 team + 1 era re-roll.
+- [x] T041 [US1] Spin screen (`SpinScreen.tsx`): slot-machine reveal over `teams.json` (idle→rolling→revealed, reduced-motion aware) with the two per-run re-rolls (team = new franchise, era = new decade of same franchise; consumed + disabled correctly). Pure spin helpers `lib/spin.ts` (+5 tests), `lib/data.ts` loader, `RunContainer.tsx` run-state host. Browser-verified end-to-end (real data: e.g. Mets 1990s→1970s on era re-roll).
 - [ ] T042 [US1] Lazy chunk loader for `td/*.json`; local-storage in-progress run state.
 - [ ] T043 [US1] Draft screen: 13 rounds, eligible players w/ best-season stats, pick+slot in one action, persistent roster sidebar.
 - [ ] T044 [US1] Simulate screen: skippable season ticker → invoke sim → result.
