@@ -34,27 +34,27 @@ gate as automated tests.
 **Exit gate**: all six tests green; JSON committed to `public/data/`.
 
 ### Setup
-- [ ] T010 Scaffold `pipeline/` as a uv project (`pyproject.toml`, `uv.lock`), deps: pandas, pytest; configure ruff. `src/ghostroster_pipeline/` package layout per plan.
-- [ ] T011 [P] Add `pipeline/README.md` documenting `uv run` entry point and the no-BRef / Lahman-only sourcing rule.
+- [x] T010 Scaffold `pipeline/` as a uv project (`pyproject.toml`, `uv.lock`), deps: pandas, pytest; configure ruff. `src/ghostroster_pipeline/` package layout per plan.
+- [x] T011 [P] Add `pipeline/README.md` documenting `uv run` entry point and the no-BRef / Lahman-only sourcing rule.
 
 ### Download + license gate (write test first)
-- [ ] T012 [US1] `tests/test_license_gate.py` — asserts the downloaded edition exposes CC BY-SA license text and an edition year; fails if absent/mismatched. (Write first, see it fail.)
-- [ ] T013 [US1] `download.py` — fetch the current Lahman edition into `.cache/` (Lahman CSV/SQLite distribution or pybaseball's Lahman loader; **never BRef/MLB-API**); extract license text + edition year; write `public/data/ATTRIBUTION.json`; raise on license mismatch.
+- [x] T012 [US1] `tests/test_license_gate.py` — asserts the downloaded edition exposes CC BY-SA license text and an edition year; fails if absent/mismatched. (Write first, see it fail.)
+- [x] T013 [US1] `download.py` — fetch the current Lahman edition into `.cache/` (Lahman CSV/SQLite distribution or pybaseball's Lahman loader; **never BRef/MLB-API**); extract license text + edition year; write `public/data/ATTRIBUTION.json`; raise on license mismatch.
 
 ### Transform
-- [ ] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥20 G, SP ≥10 GS, RP ≥20 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Thresholds are flagged tuning defaults.)
-- [ ] T015 [P] [US1] `stats.py` — select each player's **best single season** with that team in that decade; build the `display` block (raw line) per data-model.
-- [ ] T016 [US1] `vectors.py` — era-adjusted, league-relative `OutcomeVector` for hitters (HBP→BB) and pitchers (from BB/H/HR/IP; 2B/3B-allowed via league split); pitcher `stamina`. (depends on T015)
+- [x] T014 [P] [US1] `eligibility.py` — per (franchise, decade): hitters ≥20 G, SP ≥10 GS, RP ≥20 relief app; compute per-cell counts; drop cells below the ≥9H/≥3SP/≥1RP floor. (Thresholds are flagged tuning defaults.)
+- [x] T015 [P] [US1] `stats.py` — select each player's **best single season** with that team in that decade; build the `display` block (raw line) per data-model.
+- [x] T016 [US1] `vectors.py` — era-adjusted, league-relative `OutcomeVector` for hitters (HBP→BB) and pitchers (from BB/H/HR/IP; 2B/3B-allowed via league split); pitcher `stamina`. (depends on T015)
 
 ### Emit (deterministic)
-- [ ] T017 [US1] `emit.py` — write `teams.json` + `td/{franchiseId}-{decade}.json` with sorted keys, stable row order, fixed float rounding. `run.py` orchestrates download→eligibility→stats→vectors→emit.
+- [x] T017 [US1] `emit.py` — write `teams.json` + `td/{franchiseId}-{decade}.json` with sorted keys, stable row order, fixed float rounding. `run.py` orchestrates download→eligibility→stats→vectors→emit.
 
 ### Acceptance checks as automated tests
-- [ ] T018 [P] [US1] `tests/test_payload_size.py` — acceptance check 1 (total `public/data/` < 20 MB) + check 2 (every `td/*.json` < 100 KB).
-- [ ] T019 [P] [US1] `tests/test_eligibility_floor.py` — acceptance check 3 (every `teams.json` cell has ≥9H/≥3SP/≥1RP; sub-floor cells absent).
-- [ ] T020 [P] [US1] `tests/test_known_vectors.py` — acceptance check 4 (5 known players' vectors match committed hand-computed fixtures).
-- [ ] T021 [P] [US1] `tests/test_determinism.py` — run pipeline twice → byte-identical JSON.
-- [ ] T022 [US1] Run full pipeline; commit `public/data/` output. **M1 exit gate.**
+- [x] T018 [P] [US1] `tests/test_payload_size.py` — acceptance check 1 (total `public/data/` < 20 MB) + check 2 (every `td/*.json` < 100 KB).
+- [x] T019 [P] [US1] `tests/test_eligibility_floor.py` — acceptance check 3 (every `teams.json` cell has ≥9H/≥3SP/≥1RP; sub-floor cells absent).
+- [x] T020 [P] [US1] `tests/test_known_vectors.py` — acceptance check 4 — logic verified vs. hand-computed Babe Ruth 1921 fixture; the 5 real-player spot-checks land with the real edition.
+- [x] T021 [P] [US1] `tests/test_determinism.py` — run pipeline twice → byte-identical JSON.
+- [ ] T022 [US1] Run full pipeline on the real edition; commit `public/data/`. **M1 exit gate — pending operator's box.com download + `--pin`.**
 
 ---
 
