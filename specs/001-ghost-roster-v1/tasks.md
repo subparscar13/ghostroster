@@ -66,8 +66,8 @@ box scores + highlights, hitting the tuning targets.
 
 - [x] T030 Node LTS + TypeScript toolchain (`package.json`, `tsconfig.json` strict, vitest); `src/sim/` package. Framework-free — Next.js arrives at M3 (T040).
 - [x] T031 [US1] mulberry32 RNG module (`src/sim/rng.ts`) + `hashSeed` for the daily seed; golden-master test pinning exact sequences (constitution II cross-browser reproduction).
-- [ ] T032 [US1] PA resolver: log5/odds-ratio batter-vs-pitcher blend vs. `OpponentModel`, seeded sampling.
-- [ ] T033 [US1] 24-state base-out machine + documented advancement table (data-model); inning/extra-innings loop.
+- [x] T032 [US1] PA resolver (`src/sim/resolve.ts`): odds-ratio (log5) batter×pitcher÷league blend + seeded `sample`; `src/sim/baseline.ts` NEUTRAL baseline pinned to the pipeline's `vectors.py` + v1 league-average `OpponentModel`. Plus `src/sim/types.ts` (data-model mirror).
+- [x] T033 [US1] 24-state base-out machine (`src/sim/baseout.ts`) + the fixed/documented advancement table (data-model); `playHalfInning` to 3 outs. (Extra-innings continuation lives in T034 game assembly.)
 - [ ] T034 [US1] Rotation cycling (SP1→3) + RP innings 7–9; 162-game season assembly.
 - [ ] T035 [US2] Box-score bookkeeping: line scores, batting lines, season highlights, grade.
 - [ ] T036 [US1] Golden-master tests (fixed seed+roster → exact record + box-score hash) + cross-browser RNG reproduction test.
