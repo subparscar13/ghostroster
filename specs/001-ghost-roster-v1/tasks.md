@@ -97,12 +97,12 @@ box scores + highlights, hitting the tuning targets.
 
 ---
 
-## M5 — Polish, analytics, deploy (1.5 days) · all
+## M5 — Polish, analytics, deploy (1.5 days) · all · code/docs done, operator actions remain
 
-- [ ] T060 Plausible-class privacy-light analytics (completion, share, daily participation).
-- [ ] T061 Final attribution/disclaimer audit on every screen; tip-jar link; **confirm FR-012 text-only (no logos/marks/photos) across all screens**.
-- [ ] T062 Deploy to Cloudflare Pages (static export); verify offline-after-load.
-- [ ] T063 Launch posts + portfolio writeup (spec→ship). *(Prereq: ghostroster.app registered — Justin's action, time-sensitive.)*
+- [x] T060 (code) `Analytics.tsx` — Plausible-class, cookie-less; ships **inert** until `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` is set at build. ⏳ operator: create the site + set the env var.
+- [x] T061 Attribution/disclaimer footer audited on every screen (root layout): Lahman/SABR + CC BY-SA + Negro-Leagues-excluded + MLB/MLBPA disclaimer + FR-012 text-only + tip jar. Browser-verified.
+- [x] T062 (config) `next.config` static export + `.nvmrc` (22) + `public/_headers` (caching) + `DEPLOY.md` (Cloudflare Pages settings). ⏳ operator: connect repo in Cloudflare, add custom domain.
+- [x] T063 (draft) `docs/portfolio-writeup.md` — spec→ship narrative + launch-post drafts. ⏳ operator: register ghostroster.app (D-006), set the real tip-jar URL, post.
 
 ---
 

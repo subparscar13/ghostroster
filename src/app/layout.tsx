@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Roboto_Slab } from "next/font/google";
 
+import { Analytics } from "@/components/Analytics";
 import { Footer } from "@/components/Footer";
 import "./globals.css";
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen flex-col bg-paper text-ink">
         <main className="flex-1">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
