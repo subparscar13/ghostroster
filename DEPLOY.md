@@ -36,6 +36,25 @@ Pages project → Custom domains → add `ghostroster.app`; Cloudflare manages t
 TLS. Update `TIP_JAR` in `src/components/Footer.tsx` to the real tip-jar URL before
 launch.
 
+## GitHub Pages (simplest for sharing with friends)
+
+The repo includes `.github/workflows/deploy.yml`, which builds the static export and
+publishes it on every push to `main`. Because GitHub *project* pages serve from a
+sub-path, the workflow builds with `NEXT_PUBLIC_BASE_PATH=/ghostroster` (matches the
+repo name) so routes, assets, and the data fetch resolve correctly; local dev and
+root hosts leave it unset.
+
+One-time setup (operator):
+
+1. Push the repo to GitHub (`gh auth login`, then `gh repo create ghostroster --public --source=. --push` — Pages needs a public repo on the free plan).
+2. Repo **Settings → Pages → Source = "GitHub Actions"**.
+3. Push to `main` (or run the workflow manually) — it deploys to
+   `https://<owner>.github.io/ghostroster/`.
+
+If the repo is named something other than `ghostroster`, change `NEXT_PUBLIC_BASE_PATH`
+in the workflow to `/<repo-name>`. `.nojekyll` is emitted so Pages serves the `_next/`
+folder. No custom domain needed to share for feedback.
+
 ## Analytics (T060)
 
 The Plausible snippet ships inert; it loads only when `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`
