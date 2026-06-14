@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 import { primaryHighlight, quip, topPerformerName } from "@/lib/result";
+import { renderResultCard, shareResultImage } from "@/lib/share";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
 import { RosterSidebar } from "./RosterSidebar";
@@ -21,6 +23,7 @@ export function ResultScreen({
   onViewBoxScores: () => void;
 }) {
   const { w, l } = result.record;
+  const [preview, setPreview] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-md px-4 pt-10 pb-10 text-center">
@@ -49,6 +52,12 @@ export function ResultScreen({
 
       <div className="mt-8 flex flex-col items-center gap-3">
         <button
+          onClick={() => setPreview(renderResultCard(result, picks).toDataURL("image/png"))}
+          className="rounded-lg border-2 border-gold px-10 py-3 font-mono text-sm uppercase tracking-[0.2em] text-gold-ink transition-transform hover:scale-[1.02] active:scale-95"
+        >
+          Share
+        </button>
+        <button
           onClick={onViewBoxScores}
           className="rounded-lg bg-navy px-10 py-3 font-mono text-sm uppercase tracking-[0.2em] text-paper transition-transform hover:scale-[1.02] active:scale-95"
         >
@@ -64,6 +73,26 @@ export function ResultScreen({
           Home
         </Link>
       </div>
+
+      {preview && (
+        <div className="mt-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">
+          <img src={preview} alt="Shareable result card" className="mx-auto w-full max-w-xs rounded-md border border-ink/20" />
+          <div className="mt-3 flex justify-center gap-3">
+            <button
+              onClick={() => void shareResultImage(result, picks)}
+              className="rounded-lg bg-vintage px-6 py-2 font-mono text-xs uppercase tracking-widest text-paper"
+            >
+              Save / share
+            </button>
+            <button
+              onClick={() => setPreview(null)}
+              className="font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

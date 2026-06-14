@@ -90,8 +90,8 @@ box scores + highlights, hitting the tuning targets.
 
 ## M4 — Box scores, share cards, daily (2.5 days) · [US2][US3]
 
-- [ ] T050 [US2] Box-score views: season game log → any game's line score + batting lines.
-- [ ] T051 [US2] Canvas-rendered downloadable result image (on-device) + native share API.
+- [x] T050 [US2] Box scores (`BoxScores.tsx`): 162-game season log (W/L, score, no-hitter flag) → tap any game for its vintage line score (inning-by-inning + R/H, League Avg vs Ghosts) + your batting lines (AB/R/H/HR/RBI/BB) in OPS order. Entry from ResultScreen. Browser-verified.
+- [x] T051 [US2] On-device share card (`lib/share.ts`): renders a 1080×1350 vintage canvas (wordmark, record, grade seal, 13-man roster with era tags, highlight, quip, attribution) → native Web Share with the PNG where supported, download fallback otherwise (no server). ResultScreen "Share" shows an inline preview + Save/share. Browser-verified (card renders).
 - [ ] T052 [US3] Daily mode: `hash(salt + YYYY-MM-DD)` seed; one attempt; local-storage result + history.
 - [ ] T053 [US3] Spoiler-safe daily share (record + grade + emoji squares, no roster).
 
