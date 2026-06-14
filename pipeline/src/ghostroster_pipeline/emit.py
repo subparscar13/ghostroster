@@ -22,6 +22,22 @@ _POS_COLS = {"G_c": "C", "G_1b": "1B", "G_2b": "2B", "G_3b": "3B", "G_ss": "SS",
              "G_lf": "LF", "G_cf": "CF", "G_rf": "RF", "G_of": "OF", "G_dh": "DH"}
 
 
+def _era_names(tables: Tables) -> dict[tuple, str]:
+    """(franchID, decade) -> era-appropriate display name: the name that franchise used
+    most in that decade (tiebreak: latest year). So the 1990s Expos read 'Montreal
+    Expos', not the franchise's current name 'Washington Nationals'."""
+    t = tables.teams[["yearID", "franchID", "name"]].copy()
+    t["yearID"] = pd.to_numeric(t["yearID"], errors="coerce")
+    t = t.dropna(subset=["yearID", "franchID", "name"])
+    t["decade"] = (t["yearID"] // 10 * 10).astype(int)
+    out: dict[tuple, str] = {}
+    for (fr, dec), grp in t.groupby(["franchID", "decade"]):
+        agg = grp.groupby("name")["yearID"].agg(count="count", last="max")
+        best = agg.sort_values(["count", "last"], ascending=[False, False]).index[0]
+        out[(fr, int(dec))] = str(best)
+    return out
+
+
 def _name_map(tables: Tables) -> dict[str, str]:
     p = tables.people
     return {
@@ -102,6 +118,7 @@ def build(
     positions = _positions(tables)
     league_hit = vectors.league_hitter_rates(tables)
     league_pitch = vectors.league_pitcher_rates(tables)
+    era_names = _era_names(tables)
     out_dir = Path(out_dir)
     # Clear stale chunks first so the output is EXACTLY the emitted set — otherwise an
     # eligibility/threshold change leaves orphan chunks from prior runs, which both
@@ -127,7 +144,9 @@ def build(
             dropped += 1
             continue
 
-        franch_name = str(hb["franchName"].iloc[0]) if len(hb) else str(pb["franchName"].iloc[0])
+        franch_name = era_names.get((franch, int(decade))) or (
+            str(hb["franchName"].iloc[0]) if len(hb) else str(pb["franchName"].iloc[0])
+        )
         hb = hb.sort_values(["OPS", "playerID"], ascending=[False, True])
         sp = sp.sort_values(["ERA", "playerID"], ascending=[True, True])
         rp = rp.sort_values(["ERA", "playerID"], ascending=[True, True])
