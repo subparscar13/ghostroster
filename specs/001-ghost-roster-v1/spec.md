@@ -45,11 +45,11 @@ After simulating, the player sees a result screen built to be screenshotted: rec
 
 ### User Story 3 - Play the daily challenge (Priority: P1)
 
-A returning player opens the daily challenge: the same seed for everyone that day, one attempt, with the result stored locally. The shareable output is spoiler-safe — record, grade, and emoji squares, with no roster reveal — so results are comparable and braggable without spoiling the draft.
+A returning player opens the daily challenge: the same spins + sim seed for everyone that day (replayable — operator decision), with the result stored locally. The shareable output is spoiler-safe — record, grade, and emoji squares, with no roster reveal — so results are comparable and braggable without spoiling the draft.
 
 **Why this priority**: The daily is the habit/retention mechanic and is P0 in the PRD. It reuses the same pure sim with a date-derived seed, so it is low marginal cost over Stories 1–2.
 
-**Independent Test**: Open the daily on a fixed date, confirm every session that day gets the identical seed, that a second attempt is blocked after one completion, and that the share text contains record + grade + squares but no roster.
+**Independent Test**: Open the daily on a fixed date, confirm every session that day gets the identical spins + seed (replay re-presents the same challenge), and that the share text contains record + grade + squares but no roster.
 
 **Acceptance Scenarios**:
 
@@ -79,7 +79,7 @@ A returning player opens the daily challenge: the same seed for everyone that da
 - **FR-006**: System MUST present a result screen with record, letter grade, a 13-man roster card tagged by team-decade, one season highlight, and one generated quip.
 - **FR-007**: Users MUST be able to browse the season game log and open any individual game's line score and batting lines.
 - **FR-008**: System MUST provide one-tap native sharing and an on-device generated downloadable result image, with no server round-trip.
-- **FR-009**: System MUST offer a daily challenge with a seed derived from the calendar date, identical for all players that day, limited to one attempt, with the result persisted locally.
+- **FR-009**: System MUST offer a daily challenge whose spins and sim seed are derived from the calendar date and identical for all players that day; replay is allowed (operator decision, supersedes the original one-attempt default), and the result is persisted locally.
 - **FR-010**: Daily-challenge sharing MUST be spoiler-safe: record + grade + emoji squares, no roster reveal.
 - **FR-011**: System MUST display an attribution footer on every screen crediting the Lahman Database / SABR, stating non-affiliation with MLB and MLBPA, and linking the tip jar.
 - **FR-012**: System MUST represent franchises as text only — no logos, marks, or player photos.
@@ -107,7 +107,7 @@ A returning player opens the daily challenge: the same seed for everyone that da
 - **SC-005**: Every screen shows the required attribution and disclaimer footer.
 - **SC-006**: The game is fully playable on a phone over a cellular connection, with total page weight under 5 MB excluding lazy-loaded data chunks.
 - **SC-007**: A completed run can end in a share action without any server interaction.
-- **SC-008**: The daily challenge yields an identical seed for all players on a given date and blocks a second attempt.
+- **SC-008**: The daily challenge yields identical spins + sim seed for all players on a given date (replay re-presents the same deterministic challenge).
 
 ## Assumptions
 

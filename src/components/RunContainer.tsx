@@ -4,11 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { loadChunk, loadTeamsIndex } from "@/lib/data";
+import { dailyDateKey, dailyNumber, dailyRng, dailySeed, dailyShareText, spoilerSquares } from "@/lib/daily";
 import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
 import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam } from "@/lib/spin";
-import { clearRun, loadRun, saveRun } from "@/lib/storage";
+import { clearRun, loadRun, saveDailyResult, saveRun } from "@/lib/storage";
+import type { RunMode } from "@/lib/storage";
 import type { DraftPick, PoolHitter, PoolPitcher, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
 import { LEAGUE_AVERAGE_OPPONENT } from "@/sim/baseline";
+import type { Rng } from "@/sim/rng";
 import { simulateSeason } from "@/sim/season";
 import { BoxScores } from "./BoxScores";
 import { DraftScreen } from "./DraftScreen";
@@ -21,7 +24,7 @@ type Rerolls = { team: number; era: number };
 
 const randomSeed = () => Math.floor(Math.random() * 0xffffffff) >>> 0;
 
-export function RunContainer() {
+export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
   const [index, setIndex] = useState<TeamsIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,13 +32,20 @@ export function RunContainer() {
   const [rerollsUsed, setRerollsUsed] = useState<Rerolls>({ team: 0, era: 0 });
   const [seed, setSeed] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>("spinning");
+  const [dateKey, setDateKey] = useState("");
+  const [respins, setRespins] = useState(0);
 
   const [cell, setCell] = useState<SpinCell | null>(null);
   const [chunk, setChunk] = useState<TeamDecadeChunk | null>(null);
   const [chunkLoading, setChunkLoading] = useState(false);
   const [spinSeq, setSpinSeq] = useState(0);
 
-  // Begin a spin onto `target`: replay the reel animation while the chunk loads.
+  // Classic spins use Math.random; daily spins are deterministic per (date, event key).
+  const rngForKey = useCallback(
+    (dk: string, key: string): Rng => (mode === "daily" && dk ? dailyRng(dk, key) : Math.random),
+    [mode],
+  );
+
   const spinTo = useCallback((target: SpinCell) => {
     setCell(target);
     setChunk(null);
@@ -52,18 +62,20 @@ export function RunContainer() {
     loadTeamsIndex()
       .then((idx) => {
         setIndex(idx);
-        const saved = loadRun();
+        const dk = mode === "daily" ? dailyDateKey(new Date()) : "";
+        setDateKey(dk);
+        const saved = loadRun(mode);
         const startPicks = saved?.picks ?? [];
         if (saved) {
           setPicks(startPicks);
           setRerollsUsed(saved.rerollsUsed);
-          if (saved.seed != null) setSeed(saved.seed);
         }
+        setSeed(mode === "daily" ? dailySeed(dk) : (saved?.seed ?? null));
         if (isComplete(startPicks)) setPhase("result");
-        else spinTo(randomCell(idx, Math.random));
+        else spinTo(randomCell(idx, rngForKey(dk, `spin:${startPicks.length + 1}`)));
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, [spinTo]);
+  }, [mode, spinTo, rngForKey]);
 
   const result = useMemo(() => {
     if (!isComplete(picks) || seed == null) return null;
@@ -75,13 +87,25 @@ export function RunContainer() {
     }
   }, [picks, seed]);
 
-  const round = picks.length + 1;
+  // Persist the daily result (replay allowed — this is history, not a lock).
+  useEffect(() => {
+    if (mode === "daily" && dateKey && result && isComplete(picks)) {
+      saveDailyResult(dateKey, {
+        record: `${result.record.w}-${result.record.l}`,
+        grade: result.grade,
+        squares: spoilerSquares(result),
+        playedAt: new Date().toISOString(),
+      });
+    }
+  }, [mode, dateKey, result, picks]);
 
+  const round = picks.length + 1;
   const persist = (next: DraftPick[], rr: Rerolls, s: number | null) =>
-    saveRun({ picks: next, rerollsUsed: rr, ...(s != null ? { seed: s } : {}) });
+    saveRun(mode, { picks: next, rerollsUsed: rr, ...(s != null ? { seed: s } : {}) });
 
   const commit = (next: DraftPick[]) => {
     setPicks(next);
+    setRespins(0);
     if (isComplete(next)) {
       const s = seed ?? randomSeed();
       setSeed(s);
@@ -89,7 +113,7 @@ export function RunContainer() {
       setPhase("simulate");
     } else {
       persist(next, rerollsUsed, seed);
-      if (index) spinTo(randomCell(index, Math.random));
+      if (index) spinTo(randomCell(index, rngForKey(dateKey, `spin:${next.length + 1}`)));
     }
   };
 
@@ -110,69 +134,90 @@ export function RunContainer() {
   };
   const onRerollTeam = () => {
     if (!index || !cell || rerollsUsed.team > 0 || !canRerollTeam(index, cell)) return;
-    consumeAndSpin("team", rerollTeam(index, cell, Math.random));
+    consumeAndSpin("team", rerollTeam(index, cell, rngForKey(dateKey, `team:${round}`)));
   };
   const onRerollEra = () => {
     if (!index || !cell || rerollsUsed.era > 0 || !canRerollEra(index, cell)) return;
-    consumeAndSpin("era", rerollEra(index, cell, Math.random));
+    consumeAndSpin("era", rerollEra(index, cell, rngForKey(dateKey, `era:${round}`)));
   };
   const onRespin = () => {
-    if (index) spinTo(randomCell(index, Math.random)); // free escape — no re-roll consumed
+    if (!index) return;
+    spinTo(randomCell(index, rngForKey(dateKey, `respin:${round}:${respins}`)));
+    setRespins((r) => r + 1);
   };
 
   const startOver = () => {
-    clearRun();
+    clearRun(mode);
     setPicks([]);
     setRerollsUsed({ team: 0, era: 0 });
-    setSeed(null);
-    if (index) spinTo(randomCell(index, Math.random));
+    setRespins(0);
+    setSeed(mode === "daily" ? dailySeed(dateKey) : null);
+    if (index) spinTo(randomCell(index, rngForKey(dateKey, `spin:1`)));
   };
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-sm px-6 pt-16 text-center">
-        <p className="font-mono text-sm text-vintage">Something went wrong.</p>
-        <p className="mt-2 font-mono text-xs text-ink-faint">{error}</p>
-        <button onClick={startOver} className="mt-6 font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4">
-          Start over
-        </button>
-      </div>
-    );
-  }
-  if (!index) {
-    return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
-  }
-
-  if (phase === "simulate" || phase === "result" || phase === "boxscores") {
-    if (!result) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
-    if (phase === "simulate") return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
-    if (phase === "boxscores") return <BoxScores result={result} picks={picks} onBack={() => setPhase("result")} />;
-    return (
-      <ResultScreen result={result} picks={picks} onReplay={startOver} onViewBoxScores={() => setPhase("boxscores")} />
-    );
-  }
-
-  if (phase === "spinning") {
-    if (!cell) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
-    return <SpinAnimation key={spinSeq} index={index} target={cell} round={round} onDone={() => setPhase("draft")} />;
-  }
-
-  if (chunkLoading || !chunk) {
-    return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading roster…</p>;
-  }
+  const view = renderView();
   return (
-    <DraftScreen
-      chunk={chunk}
-      picks={picks}
-      round={round}
-      rerollsUsed={rerollsUsed}
-      canRerollTeam={cell ? canRerollTeam(index, cell) : false}
-      canRerollEra={cell ? canRerollEra(index, cell) : false}
-      onRerollTeam={onRerollTeam}
-      onRerollEra={onRerollEra}
-      onRespin={onRespin}
-      onPickHitter={onPickHitter}
-      onPickPitcher={onPickPitcher}
-    />
+    <>
+      {mode === "daily" && dateKey && (
+        <p className="pt-4 text-center font-mono text-[11px] uppercase tracking-[0.3em] text-vintage">
+          Daily · Ghost Roster #{dailyNumber(dateKey)}
+        </p>
+      )}
+      {view}
+    </>
   );
+
+  function renderView() {
+    if (error) {
+      return (
+        <div className="mx-auto max-w-sm px-6 pt-16 text-center">
+          <p className="font-mono text-sm text-vintage">Something went wrong.</p>
+          <p className="mt-2 font-mono text-xs text-ink-faint">{error}</p>
+          <button onClick={startOver} className="mt-6 font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4">
+            Start over
+          </button>
+        </div>
+      );
+    }
+    if (!index) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
+
+    if (phase === "simulate" || phase === "result" || phase === "boxscores") {
+      if (!result) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
+      if (phase === "simulate") return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
+      if (phase === "boxscores") return <BoxScores result={result} picks={picks} onBack={() => setPhase("result")} />;
+      return (
+        <ResultScreen
+          result={result}
+          picks={picks}
+          onReplay={startOver}
+          onViewBoxScores={() => setPhase("boxscores")}
+          {...(mode === "daily" && dateKey ? { dailyShareText: dailyShareText(dateKey, result) } : {})}
+        />
+      );
+    }
+
+    if (phase === "spinning") {
+      if (!cell) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading…</p>;
+      return <SpinAnimation key={spinSeq} index={index} target={cell} round={round} onDone={() => setPhase("draft")} />;
+    }
+
+    if (chunkLoading || !chunk) {
+      return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Loading roster…</p>;
+    }
+    return (
+      <DraftScreen
+        chunk={chunk}
+        picks={picks}
+        round={round}
+        rerollsUsed={rerollsUsed}
+        canRerollTeam={cell ? canRerollTeam(index, cell) : false}
+        canRerollEra={cell ? canRerollEra(index, cell) : false}
+        onRerollTeam={onRerollTeam}
+        onRerollEra={onRerollEra}
+        onRespin={onRespin}
+        onPickHitter={onPickHitter}
+        onPickPitcher={onPickPitcher}
+      />
+    );
+  }
 }

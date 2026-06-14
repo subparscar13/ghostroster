@@ -88,12 +88,12 @@ box scores + highlights, hitting the tuning targets.
 
 ---
 
-## M4 — Box scores, share cards, daily (2.5 days) · [US2][US3]
+## M4 — Box scores, share cards, daily ✅ DONE (2.5 days) · [US2][US3]
 
 - [x] T050 [US2] Box scores (`BoxScores.tsx`): 162-game season log (W/L, score, no-hitter flag) → tap any game for its vintage line score (inning-by-inning + R/H, League Avg vs Ghosts) + your batting lines (AB/R/H/HR/RBI/BB) in OPS order. Entry from ResultScreen. Browser-verified.
 - [x] T051 [US2] On-device share card (`lib/share.ts`): renders a 1080×1350 vintage canvas (wordmark, record, grade seal, 13-man roster with era tags, highlight, quip, attribution) → native Web Share with the PNG where supported, download fallback otherwise (no server). ResultScreen "Share" shows an inline preview + Save/share. Browser-verified (card renders).
-- [ ] T052 [US3] Daily mode: `hash(salt + YYYY-MM-DD)` seed; one attempt; local-storage result + history.
-- [ ] T053 [US3] Spoiler-safe daily share (record + grade + emoji squares, no roster).
+- [x] T052 [US3] Daily mode (`lib/daily.ts` + `RunContainer mode="daily"` at `/daily`): date-derived **deterministic spins** (seeded per round/event) + sim seed `hash(salt+YYYY-MM-DD)` — same challenge for everyone. "Daily · Ghost Roster #N" badge; result persisted to localStorage (`saveDailyResult`). **Replay allowed** (operator decision, supersedes one-attempt). Browser-verified: two loads land the same team-decade; daily seed yields a distinct record from classic.
+- [x] T053 [US3] Spoiler-safe share (`dailyShareText`/`spoilerSquares` + `shareDaily`): "Ghost Roster #N", record · grade, 18 emoji squares (9-game stretches), link — **no roster**. ResultScreen swaps to a text share + visible squares preview in daily mode. (Clipboard fallback blocked only inside the preview iframe; text is selectable.)
 
 ---
 

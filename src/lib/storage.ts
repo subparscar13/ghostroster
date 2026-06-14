@@ -1,32 +1,36 @@
 /**
- * In-progress run persistence (T042). The run survives a reload via localStorage so
- * progress is never silently lost (spec edge case). Daily history (M4) uses a
- * separate key. SSR-safe: every access guards `window`.
+ * In-progress run persistence (T042) + daily result history (T052). Runs survive a
+ * reload via localStorage so progress is never silently lost. Classic and daily runs
+ * use separate keys so they don't clobber each other. SSR-safe: every access guards
+ * `window`.
  */
 
 import type { DraftPick } from "./types";
 
-const RUN_KEY = "ghostroster:run:v1";
+export type RunMode = "classic" | "daily";
+
+const runKey = (mode: RunMode) => `ghostroster:run:${mode}:v1`;
+const DAILY_KEY = "ghostroster:daily:v1";
 
 export type PersistedRun = {
   rerollsUsed: { team: number; era: number };
   picks: DraftPick[];
-  seed?: number; // the season seed, set once the draft completes (reproducible result)
+  seed?: number; // season seed (set once the draft completes; fixed up-front for daily)
 };
 
-export function saveRun(run: PersistedRun): void {
+export function saveRun(mode: RunMode, run: PersistedRun): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(RUN_KEY, JSON.stringify(run));
+    window.localStorage.setItem(runKey(mode), JSON.stringify(run));
   } catch {
     // storage full / disabled — non-fatal; the run just won't resume.
   }
 }
 
-export function loadRun(): PersistedRun | null {
+export function loadRun(mode: RunMode): PersistedRun | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(RUN_KEY);
+    const raw = window.localStorage.getItem(runKey(mode));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PersistedRun;
     if (!Array.isArray(parsed.picks)) return null;
@@ -36,10 +40,33 @@ export function loadRun(): PersistedRun | null {
   }
 }
 
-export function clearRun(): void {
+export function clearRun(mode: RunMode): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.removeItem(RUN_KEY);
+    window.localStorage.removeItem(runKey(mode));
+  } catch {
+    // ignore
+  }
+}
+
+export type DailyResult = { record: string; grade: string; squares: string; playedAt: string };
+export type DailyHistory = Record<string, DailyResult>;
+
+export function loadDailyHistory(): DailyHistory {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(DAILY_KEY) ?? "{}") as DailyHistory;
+  } catch {
+    return {};
+  }
+}
+
+export function saveDailyResult(dateKey: string, result: DailyResult): void {
+  if (typeof window === "undefined") return;
+  try {
+    const history = loadDailyHistory();
+    history[dateKey] = result;
+    window.localStorage.setItem(DAILY_KEY, JSON.stringify(history));
   } catch {
     // ignore
   }
