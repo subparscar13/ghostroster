@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 
-import { autoSlotHitter, autoSlotPitcher, needs } from "@/lib/draft";
-import type { DraftPick, PoolHitter, PoolPitcher, TeamDecadeChunk } from "@/lib/types";
+import { autoSlotHitter, autoSlotPitcher, needs, ownOpenSlots } from "@/lib/draft";
+import { REROLLS_PER_RUN } from "@/lib/spin";
+import type { DraftPick, PoolHitter, PoolPitcher, Slot, TeamDecadeChunk } from "@/lib/types";
+import { PlayerName } from "./PlayerName";
 import { RosterSidebar } from "./RosterSidebar";
 
 type Props = {
@@ -16,7 +18,7 @@ type Props = {
   onRerollTeam: () => void;
   onRerollEra: () => void;
   onRespin: () => void;
-  onPickHitter: (h: PoolHitter, tag: string) => void;
+  onPickHitter: (h: PoolHitter, tag: string, slot?: Slot) => void;
   onPickPitcher: (p: PoolPitcher, tag: string) => void;
 };
 
@@ -39,6 +41,7 @@ export function DraftScreen({
   onPickPitcher,
 }: Props) {
   const [tab, setTab] = useState<Tab>("hitters");
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
   const open = needs(picks);
   const drafted = new Set(picks.map((p) => p.playerId));
 
@@ -65,8 +68,8 @@ export function DraftScreen({
       </p>
 
       <div className="mt-3 flex justify-center gap-2">
-        <Reroll label="Re-roll team" used={rerollsUsed.team > 0} disabled={!canRerollTeam} onClick={onRerollTeam} />
-        <Reroll label="Re-roll decade" used={rerollsUsed.era > 0} disabled={!canRerollEra} onClick={onRerollEra} />
+        <Reroll label="Re-roll team" remaining={REROLLS_PER_RUN - rerollsUsed.team} disabled={!canRerollTeam} onClick={onRerollTeam} />
+        <Reroll label="Re-roll decade" remaining={REROLLS_PER_RUN - rerollsUsed.era} disabled={!canRerollEra} onClick={onRerollEra} />
       </div>
 
       <div className="my-4 rounded-lg border border-faded/60 bg-paper-dark/40 p-2">
@@ -93,17 +96,46 @@ export function DraftScreen({
 
       {tab === "hitters" ? (
         <Section title="Hitters">
-          {hitters.map((h) => (
-            <PlayerRow
-              key={h.playerId}
-              name={h.name}
-              meta={h.pos.join("/")}
-              stats={`${h.display.AVG} avg · ${h.display.HR} hr · ${h.display.OPS} ops`}
-              draftable={hitterDraftable(h)}
-              picked={drafted.has(h.playerId)}
-              onClick={() => onPickHitter(h, eraTag(h.display.year, h.display.team))}
-            />
-          ))}
+          {hitters.map((h) => {
+            const tag = eraTag(h.display.year, h.display.team);
+            const slots = ownOpenSlots(h.pos, picks);
+            const draftable = hitterDraftable(h);
+            return (
+              <div key={h.playerId}>
+                <PlayerRow
+                  name={h.name}
+                  meta={h.pos.join("/")}
+                  stats={`${h.display.AVG} avg · ${h.display.HR} hr · ${h.display.OPS} ops`}
+                  allStar={h.allStar}
+                  hof={h.hof}
+                  draftable={draftable}
+                  picked={drafted.has(h.playerId)}
+                  onClick={() => {
+                    if (!draftable) return;
+                    if (slots.length >= 2) setPickerFor(pickerFor === h.playerId ? null : h.playerId);
+                    else onPickHitter(h, tag); // single eligible position (or DH fallback) → auto
+                  }}
+                />
+                {pickerFor === h.playerId && (
+                  <div className="flex flex-wrap items-center gap-1.5 bg-gold/5 px-3 py-2">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">play at:</span>
+                    {slots.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setPickerFor(null);
+                          onPickHitter(h, tag, s);
+                        }}
+                        className="rounded border border-navy px-2.5 py-1 font-mono text-[11px] uppercase text-navy hover:bg-navy hover:text-paper"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </Section>
       ) : (
         <>
@@ -114,6 +146,8 @@ export function DraftScreen({
                 name={p.name}
                 meta="SP"
                 stats={`${p.display.W}-${p.display.L} · ${p.display.ERA} era · ${p.display.SO} k`}
+                allStar={p.allStar}
+                hof={p.hof}
                 draftable={spDraftable(p)}
                 picked={drafted.has(p.playerId)}
                 onClick={() => onPickPitcher(p, eraTag(p.display.year, p.display.team))}
@@ -127,6 +161,8 @@ export function DraftScreen({
                 name={p.name}
                 meta="RP"
                 stats={`${p.display.W}-${p.display.L} · ${p.display.ERA} era · ${p.display.SO} k`}
+                allStar={p.allStar}
+                hof={p.hof}
                 draftable={rpDraftable(p)}
                 picked={drafted.has(p.playerId)}
                 onClick={() => onPickPitcher(p, eraTag(p.display.year, p.display.team))}
@@ -152,8 +188,8 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function Reroll({ label, used, disabled, onClick }: { label: string; used: boolean; disabled?: boolean; onClick: () => void }) {
-  const spent = used || disabled;
+function Reroll({ label, remaining, disabled, onClick }: { label: string; remaining: number; disabled?: boolean; onClick: () => void }) {
+  const spent = remaining <= 0 || disabled;
   return (
     <button
       onClick={onClick}
@@ -162,7 +198,7 @@ function Reroll({ label, used, disabled, onClick }: { label: string; used: boole
         spent ? "cursor-not-allowed border-faded/50 text-ink-faint/50 line-through" : "border-gold text-gold-ink hover:bg-gold/10"
       }`}
     >
-      {label} · {used ? 0 : 1}
+      {label} · {Math.max(0, remaining)}
     </button>
   );
 }
@@ -180,6 +216,8 @@ function PlayerRow({
   name,
   meta,
   stats,
+  allStar,
+  hof,
   draftable,
   picked,
   onClick,
@@ -187,6 +225,8 @@ function PlayerRow({
   name: string;
   meta: string;
   stats: string;
+  allStar?: boolean;
+  hof?: boolean;
   draftable: boolean;
   picked: boolean;
   onClick: () => void;
@@ -200,8 +240,8 @@ function PlayerRow({
       }`}
     >
       <span className="min-w-0">
-        <span className={`block truncate font-display text-sm ${picked ? "line-through" : ""} text-ink`}>
-          {name} <span className="font-mono text-[10px] text-ink-faint">{meta}</span>
+        <span className={`block truncate font-display text-sm text-ink ${picked ? "line-through" : ""}`}>
+          <PlayerName name={name} allStar={allStar} hof={hof} /> <span className="font-mono text-[10px] text-ink-faint">{meta}</span>
         </span>
         <span className="block font-mono text-[10px] text-ink-soft">{stats}</span>
       </span>

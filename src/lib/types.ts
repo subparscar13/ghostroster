@@ -50,16 +50,18 @@ export type PitcherDisplay = {
   HR: number;
 };
 
-/** A draftable hitter — structurally a sim Hitter plus a display line. */
+/** A draftable hitter — structurally a sim Hitter plus a display line + prestige. */
 export type PoolHitter = {
   playerId: string;
   name: string;
   pos: string[];
   vector: OutcomeVector;
   display: HitterDisplay;
+  allStar: boolean; // the drafted best-season was an All-Star season
+  hof: boolean; // career Hall-of-Fame inductee
 };
 
-/** A draftable pitcher — structurally a sim Pitcher plus a display line. */
+/** A draftable pitcher — structurally a sim Pitcher plus a display line + prestige. */
 export type PoolPitcher = {
   playerId: string;
   name: string;
@@ -67,6 +69,8 @@ export type PoolPitcher = {
   allowed: OutcomeVector;
   stamina: number;
   display: PitcherDisplay;
+  allStar: boolean;
+  hof: boolean;
 };
 
 /** `td/{franchiseId}-{decade}.json` — one team-decade pool. */

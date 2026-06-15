@@ -10,6 +10,9 @@ import type { SpinCell, TeamsIndex } from "./types";
 
 export type Rng = () => number;
 
+/** Re-rolls allowed per run, for each of team and decade (FR-001). */
+export const REROLLS_PER_RUN = 2;
+
 function pick<T>(arr: T[], rng: Rng): T {
   return arr[Math.floor(rng() * arr.length)]!;
 }

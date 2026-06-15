@@ -10,6 +10,7 @@ import {
   hitterEligible,
   isComplete,
   needs,
+  ownOpenSlots,
 } from "../src/lib/draft";
 import { NEUTRAL } from "../src/sim/baseline";
 import type { DraftPick, PoolHitter, PoolPitcher } from "../src/lib/types";
@@ -20,6 +21,8 @@ const hitter = (id: string, pos: string[]): PoolHitter => ({
   pos,
   vector: NEUTRAL,
   display: { year: 1990, team: "XXX", G: 150, PA: 600, AB: 540, H: 160, "2B": 30, "3B": 3, HR: 25, BB: 55, HBP: 5, SO: 90, AVG: "0.296", OPS: "0.900" },
+  allStar: false,
+  hof: false,
 });
 const pitcher = (id: string, role: "SP" | "RP"): PoolPitcher => ({
   playerId: id,
@@ -28,6 +31,8 @@ const pitcher = (id: string, role: "SP" | "RP"): PoolPitcher => ({
   allowed: NEUTRAL,
   stamina: 0.7,
   display: { year: 1990, team: "XXX", W: 18, L: 6, ERA: "2.50", G: 34, GS: 34, IP: 240, H: 200, BB: 50, SO: 220, HR: 15 },
+  allStar: false,
+  hof: false,
 });
 // One position per hitter slot, so nine hitters fill the lineup under strict slotting.
 const POS9: string[][] = [["C"], ["1B"], ["2B"], ["3B"], ["SS"], ["LF"], ["CF"], ["RF"], ["DH"]];
@@ -67,6 +72,39 @@ describe("autoSlotPitcher", () => {
     expect(autoSlotPitcher("RP", [])).toBe("RP");
     const picks: DraftPick[] = [{ slot: "RP", playerId: "r", name: "r", kind: "rp", tag: "" }];
     expect(autoSlotPitcher("RP", picks)).toBeNull();
+  });
+});
+
+describe("ownOpenSlots (position picker)", () => {
+  it("lists the player's own open positions, excluding DH", () => {
+    const slots = ownOpenSlots(["OF", "1B"], []);
+    expect(slots).toContain("1B");
+    expect(slots).toContain("LF");
+    expect(slots).toContain("CF");
+    expect(slots).toContain("RF");
+    expect(slots).not.toContain("DH");
+    expect(slots.length).toBeGreaterThanOrEqual(2);
+  });
+  it("returns a single slot for a one-position player (no picker)", () => {
+    expect(ownOpenSlots(["SS"], [])).toEqual(["SS"]);
+  });
+  it("is empty for a DH-only player (auto-slot to DH)", () => {
+    expect(ownOpenSlots(["DH"], [])).toEqual([]);
+  });
+  it("drops slots already filled", () => {
+    const picks: DraftPick[] = [{ slot: "1B", playerId: "x", name: "x", kind: "hitter", tag: "" }];
+    expect(ownOpenSlots(["OF", "1B"], picks)).not.toContain("1B");
+  });
+});
+
+describe("draftHitter with an explicit slot", () => {
+  it("honors a valid, open, eligible slot", () => {
+    const next = draftHitter(hitter("a", ["OF", "1B"]), "", [], "1B");
+    expect(next?.[0]?.slot).toBe("1B");
+  });
+  it("falls back to auto-slot for an ineligible/taken slot", () => {
+    const next = draftHitter(hitter("a", ["1B"]), "", [], "SS"); // not a 1B player's slot
+    expect(next?.[0]?.slot).toBe("1B"); // auto-slotted to their real position
   });
 });
 

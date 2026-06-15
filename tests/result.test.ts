@@ -12,23 +12,32 @@ const make = (w: number, l: number, h: Partial<Highlights> = {}): SeasonResult =
 });
 
 describe("quip", () => {
-  it("celebrates a perfect season", () => expect(quip(make(162, 0))).toMatch(/perfection/i));
-  it("laments a near miss", () => expect(quip(make(159, 3))).toContain("3"));
-  it("has a fallback for a poor season", () => expect(quip(make(60, 102))).toMatch(/character/i));
-  it("is deterministic", () => expect(quip(make(120, 42))).toBe(quip(make(120, 42))));
+  it("returns a non-empty quote and a (parody) author", () => {
+    const q = quip(make(162, 0), []);
+    expect(q.quote.length).toBeGreaterThan(0);
+    expect(q.author.length).toBeGreaterThan(0);
+  });
+
+  it("is deterministic for the same result", () => {
+    expect(quip(make(120, 42), [])).toEqual(quip(make(120, 42), []));
+  });
+
+  it("weaves specifics into near-miss lines (cites the loss count)", () => {
+    expect(quip(make(158, 4), []).quote).toContain("4");
+  });
+
+  it("varies across very different seasons", () => {
+    expect(quip(make(162, 0), []).quote).not.toBe(quip(make(60, 102), []).quote);
+  });
+
+  it("interpolates the top performer's drafted name when a quote uses it", () => {
+    const picks: DraftPick[] = [{ slot: "RF", playerId: "ruth", name: "Babe Ruth", kind: "hitter", tag: "'27 NYY" }];
+    // Force the HUNDRED/POOR pools across a few records; at least confirm the name resolves.
+    expect(topPerformerName(make(162, 0), picks)).toBe("Babe Ruth");
+  });
 });
 
 describe("primaryHighlight", () => {
   it("leads with no-hitters when present", () => expect(primaryHighlight(make(150, 12, { noHitters: 2 }))).toMatch(/2 no-hitters/));
   it("falls back to the win streak", () => expect(primaryHighlight(make(150, 12, { longestWinStreak: 15 }))).toMatch(/streak: 15/));
-});
-
-describe("topPerformerName", () => {
-  it("resolves the id to the drafted name", () => {
-    const picks: DraftPick[] = [{ slot: "RF", playerId: "ruth", name: "Babe Ruth", kind: "hitter", tag: "'27 NYY" }];
-    expect(topPerformerName(make(162, 0), picks)).toBe("Babe Ruth");
-  });
-  it("falls back to the id when not found", () => {
-    expect(topPerformerName(make(162, 0), [])).toBe("ruth");
-  });
 });

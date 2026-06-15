@@ -2,6 +2,7 @@
 
 import { ALL_SLOTS } from "@/lib/draft";
 import type { DraftPick, Slot } from "@/lib/types";
+import { PlayerName } from "./PlayerName";
 
 const LABEL: Record<Slot, string> = {
   C: "C", "1B": "1B", "2B": "2B", "3B": "3B", SS: "SS", LF: "LF", CF: "CF", RF: "RF", DH: "DH",
@@ -28,7 +29,14 @@ export function RosterSidebar({ picks }: { picks: DraftPick[] }) {
             </div>
             {pick ? (
               <>
-                <div className="truncate font-display text-xs leading-tight">{pick.name}</div>
+                <div className="truncate font-display text-xs leading-tight">
+                  <PlayerName
+                    name={pick.name}
+                    allStar={(pick.hitter ?? pick.pitcher)?.allStar}
+                    hof={(pick.hitter ?? pick.pitcher)?.hof}
+                    onDark
+                  />
+                </div>
                 <div className="font-mono text-[9px] text-faded">{pick.tag}</div>
               </>
             ) : (

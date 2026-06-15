@@ -6,10 +6,10 @@ import Link from "next/link";
 import { loadChunk, loadTeamsIndex } from "@/lib/data";
 import { dailyDateKey, dailyNumber, dailyRng, dailySeed, dailyShareText, spoilerSquares } from "@/lib/daily";
 import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
-import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam } from "@/lib/spin";
+import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam, REROLLS_PER_RUN } from "@/lib/spin";
 import { clearRun, loadRun, saveDailyResult, saveRun } from "@/lib/storage";
 import type { RunMode } from "@/lib/storage";
-import type { DraftPick, PoolHitter, PoolPitcher, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
+import type { DraftPick, PoolHitter, PoolPitcher, Slot, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
 import { LEAGUE_AVERAGE_OPPONENT } from "@/sim/baseline";
 import type { Rng } from "@/sim/rng";
 import { simulateSeason } from "@/sim/season";
@@ -117,8 +117,8 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     }
   };
 
-  const onPickHitter = (h: PoolHitter, tag: string) => {
-    const next = draftHitter(h, tag, picks);
+  const onPickHitter = (h: PoolHitter, tag: string, slot?: Slot) => {
+    const next = draftHitter(h, tag, picks, slot);
     if (next) commit(next);
   };
   const onPickPitcher = (p: PoolPitcher, tag: string) => {
@@ -133,12 +133,13 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     spinTo(next);
   };
   const onRerollTeam = () => {
-    if (!index || !cell || rerollsUsed.team > 0 || !canRerollTeam(index, cell)) return;
-    consumeAndSpin("team", rerollTeam(index, cell, rngForKey(dateKey, `team:${round}`)));
+    if (!index || !cell || rerollsUsed.team >= REROLLS_PER_RUN || !canRerollTeam(index, cell)) return;
+    // Index the daily key per re-roll so the two re-rolls are distinct + reproducible.
+    consumeAndSpin("team", rerollTeam(index, cell, rngForKey(dateKey, `team:${round}:${rerollsUsed.team + 1}`)));
   };
   const onRerollEra = () => {
-    if (!index || !cell || rerollsUsed.era > 0 || !canRerollEra(index, cell)) return;
-    consumeAndSpin("era", rerollEra(index, cell, rngForKey(dateKey, `era:${round}`)));
+    if (!index || !cell || rerollsUsed.era >= REROLLS_PER_RUN || !canRerollEra(index, cell)) return;
+    consumeAndSpin("era", rerollEra(index, cell, rngForKey(dateKey, `era:${round}:${rerollsUsed.era + 1}`)));
   };
   const onRespin = () => {
     if (!index) return;

@@ -26,6 +26,7 @@ export function ResultScreen({
   dailyShareText?: string;
 }) {
   const { w, l } = result.record;
+  const quote = quip(result, picks);
   const [preview, setPreview] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const isDaily = dailyShareText != null;
@@ -51,9 +52,10 @@ export function ResultScreen({
         <p>Top performer: {topPerformerName(result, picks)}</p>
       </div>
 
-      <p className="mx-auto mt-4 max-w-xs text-balance font-display text-lg italic text-ink">
-        &ldquo;{quip(result)}&rdquo;
-      </p>
+      <figure className="mx-auto mt-4 max-w-xs">
+        <p className="text-balance font-display text-lg italic text-ink">&ldquo;{quote.quote}&rdquo;</p>
+        <figcaption className="mt-1 font-mono text-[11px] uppercase tracking-wider text-ink-faint">— {quote.author}</figcaption>
+      </figure>
 
       <div className="mt-8 flex flex-col items-center gap-3">
         {isDaily ? (

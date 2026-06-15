@@ -30,6 +30,12 @@ export function autoSlotHitter(pos: string[], picks: DraftPick[]): Slot | null {
   return null;
 }
 
+/** Open slots among the player's OWN listed positions (excludes the universal DH).
+ * Drives the position picker: only show it when this has 2+ entries (a real choice). */
+export function ownOpenSlots(pos: string[], picks: DraftPick[]): Slot[] {
+  return HITTER_SLOTS.filter((s) => s !== "DH" && hitterEligible(s, pos) && !isFilled(picks, s));
+}
+
 /** The slot a pitcher would take (first open SP slot, or the RP slot), else null. */
 export function autoSlotPitcher(role: "SP" | "RP", picks: DraftPick[]): Slot | null {
   if (role === "SP") {
@@ -54,11 +60,12 @@ export const isComplete = (picks: DraftPick[]) => picks.length === ALL_SLOTS.len
 
 /** Make a pick: returns the new picks array, or null if the player can't be slotted
  * (their category is full, or they're already drafted). */
-export function draftHitter(h: PoolHitter, tag: string, picks: DraftPick[]): DraftPick[] | null {
+export function draftHitter(h: PoolHitter, tag: string, picks: DraftPick[], slot?: Slot): DraftPick[] | null {
   if (picks.some((p) => p.playerId === h.playerId)) return null;
-  const slot = autoSlotHitter(h.pos, picks);
-  if (!slot) return null;
-  return [...picks, { slot, playerId: h.playerId, name: h.name, kind: "hitter", tag, hitter: h }];
+  // Honor an explicit, eligible, open slot (from the picker); else auto-slot.
+  const chosen = slot && hitterEligible(slot, h.pos) && !isFilled(picks, slot) ? slot : autoSlotHitter(h.pos, picks);
+  if (!chosen) return null;
+  return [...picks, { slot: chosen, playerId: h.playerId, name: h.name, kind: "hitter", tag, hitter: h }];
 }
 
 export function draftPitcher(p: PoolPitcher, tag: string, picks: DraftPick[]): DraftPick[] | null {
