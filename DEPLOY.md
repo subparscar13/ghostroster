@@ -55,6 +55,20 @@ If the repo is named something other than `ghostroster`, change `NEXT_PUBLIC_BAS
 in the workflow to `/<repo-name>`. `.nojekyll` is emitted so Pages serves the `_next/`
 folder. No custom domain needed to share for feedback.
 
+## In-app comment box (T075 / D-010)
+
+A "leave a comment" button + modal (anyone, no login) that POSTs to a third-party
+form service — no backend (constitution IV). It ships **inert** until configured.
+
+1. Create a free form at a Formspree-class service; copy its endpoint URL (e.g.
+   `https://formspree.io/f/abcdwxyz`). Submissions land in that service's dashboard/inbox.
+2. Set `NEXT_PUBLIC_COMMENT_ENDPOINT` to that URL:
+   - **GitHub Pages:** repo → Settings → Secrets and variables → Actions → Variables →
+     add `COMMENT_ENDPOINT` (the workflow passes it to the build).
+   - **Cloudflare Pages:** add `NEXT_PUBLIC_COMMENT_ENDPOINT` to the build env vars.
+3. Redeploy. The endpoint is inlined at build time (it's a public client-side POST
+   target, not a secret). A honeypot + the service's spam filter handle bots.
+
 ## Analytics (T060)
 
 The Plausible snippet ships inert; it loads only when `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`

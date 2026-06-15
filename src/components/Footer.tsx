@@ -5,6 +5,8 @@
  * every route. Update TIP_JAR once a real Ko-fi-style link exists.
  */
 
+import { CommentBox } from "./CommentBox";
+
 const TIP_JAR = "https://ko-fi.com/"; // TODO: replace with the real tip-jar URL at launch
 
 export function Footer() {
@@ -25,6 +27,7 @@ export function Footer() {
         <a href={TIP_JAR} className="underline decoration-faded underline-offset-2 hover:text-ink">
           tip jar
         </a>
+        <CommentBox />
       </p>
     </footer>
   );

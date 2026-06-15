@@ -32,6 +32,9 @@ jobs:
       - run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: /ghostroster
+          # Optional: set a repo Variable COMMENT_ENDPOINT (a Formspree form URL) to
+          # enable the in-app comment box. Unset → the box ships inert (D-010).
+          NEXT_PUBLIC_COMMENT_ENDPOINT: ${{ vars.COMMENT_ENDPOINT }}
       - run: touch out/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
