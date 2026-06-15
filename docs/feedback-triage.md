@@ -6,9 +6,11 @@ new asks are P1/P2 or small polish, and anything that threatens scope goes throu
 `decision-log.md` first (don't expand v1 — cut or defer).
 
 ## How friends report
-- **In-app:** the footer "feedback" link (→ GitHub issue form, or a Google Form — see
-  the channel note at the bottom).
-- **Casual:** a text/DM is fine — paste it into Intake below and I'll triage it.
+- **Casual DMs / texts** (chosen channel — no in-app link). Collect them however friends
+  already reach you, paste the raw notes into **Intake** below, and I'll categorize +
+  prioritize them against the rubric.
+- If you later want a one-tap in-app link, a Google Form is the lowest-friction option;
+  point a footer link at it (single URL in `src/components/Footer.tsx`).
 
 ## Rubric
 
@@ -55,9 +57,3 @@ determinism.
 
 - _(none yet)_
 
----
-
-**Channel note:** the footer link points at the repo's GitHub issue form
-(`/issues/new`), which is structured but needs a GitHub account. For non-dev friends,
-a Google Form is lower friction — create one and the footer link can point there
-instead (it's a single configurable URL in `src/components/Footer.tsx`).
