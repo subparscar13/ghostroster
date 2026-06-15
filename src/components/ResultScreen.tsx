@@ -22,7 +22,7 @@ export function ResultScreen({
   result: SeasonResult;
   picks: DraftPick[];
   onReplay: () => void;
-  onViewBoxScores: () => void;
+  onViewBoxScores: (game?: number) => void;
   dailyShareText?: string;
 }) {
   const { w, l } = result.record;
@@ -57,7 +57,8 @@ export function ResultScreen({
           <Stat label="Shutouts" value={stats.shutouts} />
           <Stat label="No-hitters" value={stats.noHitters} />
           <Stat label="Long. streak" value={stats.longestWinStreak} />
-          <Stat label="Biggest win" value={stats.biggestWin} />
+          <Stat label="Biggest win" value={stats.biggestWin} onClick={() => onViewBoxScores(result.highlights.bestGame)} />
+          <Stat label="Worst loss" value={stats.worstLoss} onClick={() => onViewBoxScores(result.highlights.worstGame)} />
         </div>
         <p className="mt-2 text-center font-mono text-xs text-ink-soft">
           Top performer: <span className="text-ink">{topPerformerName(result, picks)}</span>
@@ -89,7 +90,7 @@ export function ResultScreen({
           </button>
         )}
         <button
-          onClick={onViewBoxScores}
+          onClick={() => onViewBoxScores()}
           className="rounded-lg bg-navy px-10 py-3 font-mono text-sm uppercase tracking-[0.2em] text-paper transition-transform hover:scale-[1.02] active:scale-95"
         >
           Box scores
@@ -136,11 +137,20 @@ export function ResultScreen({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-md bg-paper-dark/40 px-2 py-1.5">
+function Stat({ label, value, onClick }: { label: string; value: string | number; onClick?: () => void }) {
+  const body = (
+    <>
       <div className="font-mono text-[9px] uppercase tracking-wider text-ink-faint">{label}</div>
       <div className="font-mono text-base tabular-nums text-ink">{value}</div>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button onClick={onClick} className="rounded-md bg-paper-dark/40 px-2 py-1.5 text-left ring-1 ring-navy/30 transition-colors hover:bg-gold/15">
+        {body}
+        <div className="font-mono text-[8px] uppercase tracking-wider text-navy">view →</div>
+      </button>
+    );
+  }
+  return <div className="rounded-md bg-paper-dark/40 px-2 py-1.5">{body}</div>;
 }

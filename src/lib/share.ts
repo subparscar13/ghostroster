@@ -6,7 +6,7 @@
 
 import type { SeasonResult } from "@/sim/types";
 import { ALL_SLOTS } from "./draft";
-import { primaryHighlight, quip } from "./result";
+import { primaryHighlight, quip, seasonStats } from "./result";
 import type { DraftPick, Slot } from "./types";
 
 const W = 1080;
@@ -109,12 +109,22 @@ export function renderResultCard(result: SeasonResult, picks: DraftPick[]): HTML
   ctx.font = "26px monospace";
   ctx.fillText(`★ ${primaryHighlight(result)}`, W / 2, y + 36);
 
+  // compact season-stats line
+  const s = seasonStats(result);
+  ctx.fillStyle = FADED;
+  ctx.font = "24px monospace";
+  ctx.fillText(
+    `${s.runDiff >= 0 ? "+" : ""}${s.runDiff} run diff · ${s.teamHR} HR · ${s.shutouts} SHO · ${s.teamAvg} AVG`,
+    W / 2,
+    y + 74,
+  );
+
   const q = quip(result, picks);
   ctx.fillStyle = INK;
   ctx.font = "italic 34px Georgia, serif";
   const quipLines = wrap(ctx, `“${q.quote}”`, 860);
-  quipLines.forEach((line, i) => ctx.fillText(line, W / 2, y + 96 + i * 44));
-  const afterQuip = y + 96 + quipLines.length * 44;
+  quipLines.forEach((line, i) => ctx.fillText(line, W / 2, y + 120 + i * 44));
+  const afterQuip = y + 120 + quipLines.length * 44;
   ctx.fillStyle = FADED;
   ctx.font = "24px monospace";
   ctx.fillText(`— ${q.author}`, W / 2, afterQuip + 4);

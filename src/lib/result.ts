@@ -24,6 +24,7 @@ export type SeasonStats = {
   longestWinStreak: number;
   biggestWin: string; // "16–2" (best run differential), or "—"
   biggestWinDiff: number;
+  worstLoss: string; // "1–9" (worst run differential), or "—"
 };
 
 /** Aggregate the 162-game logs into team season totals. */
@@ -36,6 +37,8 @@ export function seasonStats(result: SeasonResult): SeasonStats {
   let shutouts = 0;
   let bestDiff = -Infinity;
   let bestLabel = "—";
+  let worstDiff = Infinity;
+  let worstLabel = "—";
   for (const g of result.gameLogs) {
     rf += g.home.runs;
     ra += g.away.runs;
@@ -49,6 +52,10 @@ export function seasonStats(result: SeasonResult): SeasonStats {
     if (diff > bestDiff) {
       bestDiff = diff;
       bestLabel = `${g.home.runs}–${g.away.runs}`;
+    }
+    if (diff < worstDiff) {
+      worstDiff = diff;
+      worstLabel = `${g.home.runs}–${g.away.runs}`;
     }
   }
   const hasGames = result.gameLogs.length > 0;
@@ -64,6 +71,7 @@ export function seasonStats(result: SeasonResult): SeasonStats {
     longestWinStreak: result.highlights.longestWinStreak,
     biggestWin: hasGames ? bestLabel : "—",
     biggestWinDiff: hasGames ? Math.max(0, bestDiff) : 0,
+    worstLoss: hasGames ? worstLabel : "—",
   };
 }
 

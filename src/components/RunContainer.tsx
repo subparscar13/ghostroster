@@ -34,6 +34,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
   const [phase, setPhase] = useState<Phase>("spinning");
   const [dateKey, setDateKey] = useState("");
   const [respins, setRespins] = useState(0);
+  const [boxGame, setBoxGame] = useState<number | null>(null); // deep-link target for box scores
 
   const [cell, setCell] = useState<SpinCell | null>(null);
   const [chunk, setChunk] = useState<TeamDecadeChunk | null>(null);
@@ -185,13 +186,17 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     if (phase === "simulate" || phase === "result" || phase === "boxscores") {
       if (!result) return <p className="mx-auto px-6 pt-16 text-center font-mono text-sm text-ink-faint">Simulating…</p>;
       if (phase === "simulate") return <SimulateScreen result={result} onDone={() => setPhase("result")} />;
-      if (phase === "boxscores") return <BoxScores result={result} picks={picks} onBack={() => setPhase("result")} />;
+      if (phase === "boxscores")
+        return <BoxScores result={result} picks={picks} initialGame={boxGame} onBack={() => setPhase("result")} />;
       return (
         <ResultScreen
           result={result}
           picks={picks}
           onReplay={startOver}
-          onViewBoxScores={() => setPhase("boxscores")}
+          onViewBoxScores={(game) => {
+            setBoxGame(game ?? null);
+            setPhase("boxscores");
+          }}
           {...(mode === "daily" && dateKey ? { dailyShareText: dailyShareText(dateKey, result) } : {})}
         />
       );

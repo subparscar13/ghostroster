@@ -7,8 +7,18 @@ import type { GameLog, SeasonResult } from "@/sim/types";
 
 /** Box scores (T050): browse the 162-game season log, tap any game for its line
  * score + your batting lines. Opponent is the era-average league ("League Avg"). */
-export function BoxScores({ result, picks, onBack }: { result: SeasonResult; picks: DraftPick[]; onBack: () => void }) {
-  const [selected, setSelected] = useState<number | null>(null);
+export function BoxScores({
+  result,
+  picks,
+  onBack,
+  initialGame = null,
+}: {
+  result: SeasonResult;
+  picks: DraftPick[];
+  onBack: () => void;
+  initialGame?: number | null;
+}) {
+  const [selected, setSelected] = useState<number | null>(initialGame);
   const nameById = useMemo(() => new Map(picks.map((p) => [p.playerId, p.name])), [picks]);
   const game = selected != null ? result.gameLogs[selected - 1] : null;
 

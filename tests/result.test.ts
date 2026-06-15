@@ -39,6 +39,7 @@ describe("seasonStats", () => {
     expect(s.teamHR).toBe(5);
     expect(s.shutouts).toBe(1);
     expect(s.biggestWin).toBe("10–0");
+    expect(s.worstLoss).toBe("1–3");
     expect(s.teamAvg).toBe((24 / 98).toFixed(3)); // 24 H / 98 AB
   });
 });
