@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { shareDaily } from "@/lib/daily";
-import { primaryHighlight, quip, topPerformerName } from "@/lib/result";
+import { quip, seasonStats, topPerformerName } from "@/lib/result";
 import { renderResultCard, shareResultImage } from "@/lib/share";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
@@ -26,6 +26,7 @@ export function ResultScreen({
   dailyShareText?: string;
 }) {
   const { w, l } = result.record;
+  const stats = seasonStats(result);
   const quote = quip(result, picks);
   const [preview, setPreview] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
@@ -45,11 +46,22 @@ export function ResultScreen({
         <RosterSidebar picks={picks} />
       </div>
 
-      <div className="space-y-1 font-mono text-sm text-ink-soft">
-        <p>
-          <span className="text-navy">&#9733;</span> {primaryHighlight(result)}
+      <div className="my-6 text-left">
+        <p className="mb-2 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Season stats</p>
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label="Run diff" value={`${stats.runDiff >= 0 ? "+" : ""}${stats.runDiff}`} />
+          <Stat label="Runs for" value={stats.runsFor} />
+          <Stat label="Runs against" value={stats.runsAgainst} />
+          <Stat label="Team avg" value={stats.teamAvg} />
+          <Stat label="Home runs" value={stats.teamHR} />
+          <Stat label="Shutouts" value={stats.shutouts} />
+          <Stat label="No-hitters" value={stats.noHitters} />
+          <Stat label="Long. streak" value={stats.longestWinStreak} />
+          <Stat label="Biggest win" value={stats.biggestWin} />
+        </div>
+        <p className="mt-2 text-center font-mono text-xs text-ink-soft">
+          Top performer: <span className="text-ink">{topPerformerName(result, picks)}</span>
         </p>
-        <p>Top performer: {topPerformerName(result, picks)}</p>
       </div>
 
       <figure className="mx-auto mt-4 max-w-xs">
@@ -120,6 +132,15 @@ export function ResultScreen({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-md bg-paper-dark/40 px-2 py-1.5">
+      <div className="font-mono text-[9px] uppercase tracking-wider text-ink-faint">{label}</div>
+      <div className="font-mono text-base tabular-nums text-ink">{value}</div>
     </div>
   );
 }
