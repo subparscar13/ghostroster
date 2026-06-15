@@ -71,12 +71,13 @@ A returning player opens the daily challenge: the same spins + sim seed for ever
 
 ### Functional Requirements
 
-- **FR-001**: System MUST present a one-tap spin that selects an independent random franchise and decade from an eligibility-filtered index, offering exactly one team re-roll and one era re-roll per run.
-- **FR-002**: System MUST run a 13-round draft (9 hitters across fielding slots DH-loose, 3 starting pitchers, 1 reliever), showing the spun team-decade's eligible players with best-season stats and letting the player pick-and-slot in a single action.
+- **FR-001**: System MUST present a one-tap spin that selects an independent random franchise and decade from an eligibility-filtered index, offering **two team re-rolls and two era re-rolls per run** (team re-roll keeps the decade; era re-roll keeps the franchise).
+- **FR-002**: System MUST run a 13-round draft (9 hitters across fielding slots DH-loose, 3 starting pitchers, 1 reliever), showing the spun team-decade's eligible players with best-season stats and letting the player pick-and-slot in a single action. **When a hitter has two or more of their own listed positions open, the system MUST let the player choose which slot to fill** (single-position players auto-slot; DH remains a fallback).
 - **FR-003**: System MUST keep the in-progress roster (filled and empty slots) visible throughout the draft.
 - **FR-004**: System MUST simulate a full 162-game season as a deterministic function of (roster, opponent model, seed), producing a win-loss record, per-game box scores, and season highlights, with no dependence on external state, wall-clock, or unseeded randomness.
 - **FR-005**: System MUST reproduce identical results for identical (roster, seed) inputs across browsers and runs.
-- **FR-006**: System MUST present a result screen with record, letter grade, a 13-man roster card tagged by team-decade, one season highlight, and one generated quip.
+- **FR-006**: System MUST present a result screen with record, letter grade, a 13-man roster card tagged by team-decade, one season highlight, and one generated **satirical quote attributed to an iconic baseball figure** (fabricated parody; weaves in the run's specifics; see D-009).
+- **FR-016**: System MUST surface player prestige on the draft, roster card, and result: a marker when the drafted best-season was an **All-Star** season, and Hall-of-Fame inductees shown distinctly (name styled). Sourced from Lahman (`AllstarFull`, `HallOfFame`), text only.
 - **FR-007**: Users MUST be able to browse the season game log and open any individual game's line score and batting lines.
 - **FR-008**: System MUST provide one-tap native sharing and an on-device generated downloadable result image, with no server round-trip.
 - **FR-009**: System MUST offer a daily challenge whose spins and sim seed are derived from the calendar date and identical for all players that day; replay is allowed (operator decision, supersedes the original one-attempt default), and the result is persisted locally.

@@ -26,6 +26,8 @@ _APPEARANCES = ["playerID", "yearID", "teamID", "G_all", "GS", "G_c", "G_1b", "G
                 "G_3b", "G_ss", "G_lf", "G_cf", "G_rf", "G_of", "G_dh", "G_p"]
 _PEOPLE = ["playerID", "nameFirst", "nameLast", "nameGiven"]
 _FRANCHISES = ["franchID", "franchName", "active"]
+_ALLSTAR = ["playerID", "yearID"]
+_HALLOFFAME = ["playerID", "inducted", "category"]
 
 
 def _read(path: Path, wanted: list[str]) -> pd.DataFrame:
@@ -42,21 +44,24 @@ class Tables:
     appearances: pd.DataFrame
     people: pd.DataFrame
     franchises: pd.DataFrame  # may be empty if TeamsFranchises.csv absent
+    allstar: pd.DataFrame  # (playerID, yearID) per All-Star appearance
+    halloffame: pd.DataFrame  # (playerID, inducted, category) per ballot
 
     @classmethod
     def from_cache(cls, cache_dir: Path) -> Tables:
         d = locate_lahman(Path(cache_dir))
-        franchises_path = d / "TeamsFranchises.csv"
-        franchises = (
-            _read(franchises_path, _FRANCHISES)
-            if franchises_path.exists()
-            else pd.DataFrame(columns=_FRANCHISES)
-        )
+
+        def optional(name: str, cols: list[str]) -> pd.DataFrame:
+            path = d / name
+            return _read(path, cols) if path.exists() else pd.DataFrame(columns=cols)
+
         return cls(
             batting=_read(d / "Batting.csv", _BATTING),
             pitching=_read(d / "Pitching.csv", _PITCHING),
             teams=_read(d / "Teams.csv", _TEAMS),
             appearances=_read(d / "Appearances.csv", _APPEARANCES),
             people=_read(people_file(d), _PEOPLE),
-            franchises=franchises,
+            franchises=optional("TeamsFranchises.csv", _FRANCHISES),
+            allstar=optional("AllstarFull.csv", _ALLSTAR),
+            halloffame=optional("HallOfFame.csv", _HALLOFFAME),
         )

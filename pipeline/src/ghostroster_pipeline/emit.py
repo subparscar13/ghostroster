@@ -38,6 +38,24 @@ def _era_names(tables: Tables) -> dict[tuple, str]:
     return out
 
 
+def _allstar_seasons(tables: Tables) -> set[tuple]:
+    """{(playerID, yearID)} for every season a player made an All-Star team."""
+    a = tables.allstar
+    if a.empty:
+        return set()
+    years = pd.to_numeric(a["yearID"], errors="coerce")
+    return {(pid, int(y)) for pid, y in zip(a["playerID"], years) if pd.notna(y)}
+
+
+def _hof_players(tables: Tables) -> set[str]:
+    """{playerID} inducted to the Hall of Fame as a Player (career-level)."""
+    h = tables.halloffame
+    if h.empty:
+        return set()
+    inducted = h[(h["inducted"] == "Y") & (h["category"] == "Player")]
+    return set(inducted["playerID"])
+
+
 def _name_map(tables: Tables) -> dict[str, str]:
     p = tables.people
     return {
@@ -64,11 +82,13 @@ def _positions(tables: Tables) -> dict[tuple, list[str]]:
     return out
 
 
-def _hitter_obj(row: pd.Series, names, positions, league_hit) -> dict:
+def _hitter_obj(row: pd.Series, names, positions, league_hit, allstars, hof) -> dict:
     key = (row["playerID"], int(row["yearID"]), row["teamID"])
     return {
         "playerId": row["playerID"],
         "name": names.get(row["playerID"], row["playerID"]),
+        "allStar": (row["playerID"], int(row["yearID"])) in allstars,
+        "hof": row["playerID"] in hof,
         "pos": positions.get(key, ["DH"]),
         "display": {
             "year": int(row["yearID"]), "team": row["teamID"],
@@ -82,10 +102,12 @@ def _hitter_obj(row: pd.Series, names, positions, league_hit) -> dict:
     }
 
 
-def _pitcher_obj(row: pd.Series, names, league_pitch, league_hit) -> dict:
+def _pitcher_obj(row: pd.Series, names, league_pitch, league_hit, allstars, hof) -> dict:
     return {
         "playerId": row["playerID"],
         "name": names.get(row["playerID"], row["playerID"]),
+        "allStar": (row["playerID"], int(row["yearID"])) in allstars,
+        "hof": row["playerID"] in hof,
         "role": row["role"],
         "display": {
             "year": int(row["yearID"]), "team": row["teamID"],
@@ -119,6 +141,8 @@ def build(
     league_hit = vectors.league_hitter_rates(tables)
     league_pitch = vectors.league_pitcher_rates(tables)
     era_names = _era_names(tables)
+    allstars = _allstar_seasons(tables)
+    hof = _hof_players(tables)
     out_dir = Path(out_dir)
     # Clear stale chunks first so the output is EXACTLY the emitted set — otherwise an
     # eligibility/threshold change leaves orphan chunks from prior runs, which both
@@ -153,10 +177,10 @@ def build(
 
         chunk = {
             "franchiseId": franch, "franchise": franch_name, "decade": int(decade),
-            "hitters": [_hitter_obj(r, names, positions, league_hit) for _, r in hb.iterrows()],
+            "hitters": [_hitter_obj(r, names, positions, league_hit, allstars, hof) for _, r in hb.iterrows()],
             "pitchers": (
-                [_pitcher_obj(r, names, league_pitch, league_hit) for _, r in sp.iterrows()]
-                + [_pitcher_obj(r, names, league_pitch, league_hit) for _, r in rp.iterrows()]
+                [_pitcher_obj(r, names, league_pitch, league_hit, allstars, hof) for _, r in sp.iterrows()]
+                + [_pitcher_obj(r, names, league_pitch, league_hit, allstars, hof) for _, r in rp.iterrows()]
             ),
         }
         _dump(out_dir / "td" / f"{franch}-{int(decade)}.json", chunk)

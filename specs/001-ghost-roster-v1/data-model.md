@@ -58,6 +58,8 @@ with a display block (raw best-season line for the draft UI) and a sim block
     {
       "playerId": "ruthba01",          // Lahman playerID
       "name": "Babe Ruth",
+      "allStar": false,                // the drafted best-season was an All-Star season
+      "hof": true,                     // career Hall-of-Fame inductee
       "pos": ["RF","LF","1B"],         // eligible fielding slots (DH-loose)
       "display": {                      // raw best-season line for the draft UI
         "year": 1921, "team": "NYA",
@@ -71,6 +73,8 @@ with a display block (raw best-season line for the draft UI) and a sim block
     {
       "playerId": "...",
       "name": "...",
+      "allStar": false,                // season-level (as above)
+      "hof": false,                    // career-level
       "role": "SP",                    // "SP" | "RP"
       "display": {
         "year": 1978, "team": "NYA",
@@ -87,6 +91,12 @@ with a display block (raw best-season line for the draft UI) and a sim block
 **Pitcher vector derivation:** from the Lahman pitching line (BB, H, HR, IP →
 batters faced), with 2B/3B-allowed split **estimated from league hit-type splits**
 that season (Lahman lacks per-pitcher 2B/3B allowed) — flagged tuning item.
+
+**Prestige flags (v1.1):** `allStar` is **season-level** — true iff the drafted
+best-season `(playerID, year)` is in `AllstarFull.csv` (so pre-1933 seasons are
+always false). `hof` is **career-level** — true iff the player has an
+`inducted="Y"`, `category="Player"` row in `HallOfFame.csv`. Both are text-only
+prestige signals; the sim ignores them.
 
 ## Sim types (TypeScript, M2)
 

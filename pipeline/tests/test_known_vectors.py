@@ -48,3 +48,15 @@ def test_vector_is_valid_distribution(mini_lahman: Path, tmp_path: Path) -> None
         assert all(v >= 0 for v in allowed.values())
         assert sum(allowed.values()) == pytest.approx(1.0, abs=1e-6)
         assert 0.0 <= pitcher["stamina"] <= 1.0
+
+
+def test_prestige_flags(mini_lahman: Path, tmp_path: Path) -> None:
+    """All-Star is season-specific; HOF is career-level (inducted Players only)."""
+    out = tmp_path / "data"
+    run_pipeline(mini_lahman, out, tmp_path / "edition.lock.json")
+    chunk = json.loads((out / "td" / "NYY-1920.json").read_text())
+    by_id = {h["playerId"]: h for h in chunk["hitters"]}
+    assert by_id["ruthba01"]["allStar"] is True  # 1921 All-Star in the fixture
+    assert by_id["ruthba01"]["hof"] is True  # inducted Player
+    assert by_id["meusebo01"]["allStar"] is False  # no All-Star row
+    assert by_id["meusebo01"]["hof"] is False  # ballot appearance, not inducted

@@ -86,6 +86,16 @@ NYY,New York Yankees,Y
 BOS,Boston Red Sox,Y
 """
 
+# Ruth: 1921 All-Star (synthetic — real All-Star game began 1933) + HOF inductee.
+# Meusel: a non-inducted ballot appearance (must NOT count as HOF).
+_ALLSTAR = """playerID,yearID,gameNum,gameID,teamID,lgID,GP,startingPos
+ruthba01,1921,0,ALS192100000,NYA,AL,1,9
+"""
+_HALLOFFAME = """playerID,yearid,votedBy,ballots,needed,votes,inducted,category,needed_note
+ruthba01,1936,BBWAA,226,170,215,Y,Player,
+meusebo01,1940,BBWAA,200,150,10,N,Player,
+"""
+
 
 @pytest.fixture
 def mini_lahman(tmp_path: Path) -> Path:
@@ -99,5 +109,7 @@ def mini_lahman(tmp_path: Path) -> Path:
     (core / "Teams.csv").write_text(_TEAMS, encoding="utf-8")
     (core / "People.csv").write_text(_PEOPLE, encoding="utf-8")
     (core / "TeamsFranchises.csv").write_text(_FRANCHISES, encoding="utf-8")
+    (core / "AllstarFull.csv").write_text(_ALLSTAR, encoding="utf-8")
+    (core / "HallOfFame.csv").write_text(_HALLOFFAME, encoding="utf-8")
     (core.parent / "readme.txt").write_text(_README, encoding="utf-8")
     return tmp_path / ".cache"
