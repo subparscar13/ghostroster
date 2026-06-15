@@ -125,8 +125,8 @@ ghostroster.app + handles (T063, Justin).
 
 Player-feedback batch; see `docs/decision-log.md` D-009 and `~/.claude/plans/`.
 
-- [ ] T070 [US1] Position picker — `lib/draft.ts` `ownOpenSlots()` + `draftHitter(…, slot?)`; `DraftScreen` inline slot chooser when a hitter has ≥2 of their own positions open (else auto-slot); `RunContainer` forwards the chosen slot. +tests.
-- [ ] T071 [US2] Satirical quote engine — `lib/result.ts` `quip → {quote, author}`, ~30–40 writerly-dry attributed lines (real iconic legends, praise + sharper sting, weave specifics, deterministic pick). `ResultScreen` + `share.ts` render the attribution. +tests.
-- [ ] T072 [US1] Two re-rolls each — `RunContainer` cap → 2, daily RNG keys indexed per re-roll; `DraftScreen` chip shows remaining (2→0). +tests.
-- [ ] T073 [US1][US2] All-Star / HOF — pipeline (`tables.py` +AllstarFull/HallOfFame, `emit.py` season-AS + career-HOF flags), `conftest` fixture, regenerate `public/data`; `lib/types.ts` `allStar`/`hof`; UI name-styling (gold HOF + ★ All-Star) on draft rows, roster card, result. `data-model.md` updated.
-- [ ] T074 Run `/speckit.analyze`; verify (pipeline determinism, tsc, tests, build, browser mobile+desktop); commit per change; push.
+- [x] T070 [US1] Position picker — `lib/draft.ts` `ownOpenSlots()` + `draftHitter(…, slot?)`; `DraftScreen` inline slot chooser when a hitter has ≥2 of their own positions open (else auto-slot); `RunContainer` forwards the chosen slot. +tests.
+- [x] T071 [US2] Satirical quote engine — `lib/result.ts` `quip → {quote, author}`, ~30–40 writerly-dry attributed lines (real iconic legends, praise + sharper sting, weave specifics, deterministic pick). `ResultScreen` + `share.ts` render the attribution. +tests.
+- [x] T072 [US1] Two re-rolls each — `RunContainer` cap → 2, daily RNG keys indexed per re-roll; `DraftScreen` chip shows remaining (2→0). +tests.
+- [x] T073 [US1][US2] All-Star / HOF — pipeline (`tables.py` +AllstarFull/HallOfFame, `emit.py` season-AS + career-HOF flags), `conftest` fixture, regenerate `public/data`; `lib/types.ts` `allStar`/`hof`; UI name-styling (gold HOF + ★ All-Star) on draft rows, roster card, result. `data-model.md` updated.
+- [x] T074 Run `/speckit.analyze`; verify (pipeline determinism, tsc, tests, build, browser mobile+desktop); commit per change; push.
