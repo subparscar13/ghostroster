@@ -1,0 +1,28 @@
+name: Feedback
+description: Tell us what worked, what didn't, or an idea
+labels: [feedback]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options:
+        - Bug (something broke)
+        - Confusing / hard to use
+        - Balance (too hard / too easy)
+        - Idea / feature
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / what you think
+      description: What were you doing, and what did you expect vs. what you saw?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser (optional)
+      placeholder: e.g. iPhone Safari, desktop Chrome

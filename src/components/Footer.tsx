@@ -6,6 +6,9 @@
  */
 
 const TIP_JAR = "https://ko-fi.com/"; // TODO: replace with the real tip-jar URL at launch
+// Where friends report feedback. GitHub issue form by default; swap for a Google
+// Form URL if you want lower friction for non-GitHub friends.
+const FEEDBACK_URL = "https://github.com/subparscar13/ghostroster/issues/new?template=feedback.yml";
 
 export function Footer() {
   return (
@@ -22,6 +25,10 @@ export function Footer() {
       </p>
       <p className="mt-1">Franchises shown as text only — not affiliated with or endorsed by MLB or the MLBPA.</p>
       <p className="mt-1">
+        <a href={FEEDBACK_URL} className="underline decoration-faded underline-offset-2 hover:text-ink">
+          feedback
+        </a>{" "}
+        ·{" "}
         <a href={TIP_JAR} className="underline decoration-faded underline-offset-2 hover:text-ink">
           tip jar
         </a>
