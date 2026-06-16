@@ -197,6 +197,41 @@ value the draft/calibration tooling uses.
 
 **Relief pitcher (RP)** — Mike Adams ('09 SDN) · Koji Uehara ('13 BOS) · Billy Wagner ('99 HOU) · Craig Kimbrel ('12 ATL) · Dennis Eckersley ('90 OAK) · Norm Charlton ('95 SEA) · Joe Berry ('44 PHA) · Doug Henry ('91 ML4) · Sean Doolittle ('18 WAS) · Rich Gossage ('81 NYA)
 
+## How real teams stack up
+
+Another way to sanity-check the engine: drop a famous real team's best lineup into it
+and play 5,000 seasons against the league-average opponent. Each player uses his actual
+line from *that* season, graded by the same era z-score; the lineup is the **nine best
+bats by value** (so defense and platoon roles are ignored).
+
+| Team (real record) | Sim record (mean of 5,000) | Median | Range | Beats its real total | 162-0 |
+|---|---|---|---|---|---|
+| 1927 Yankees (110–44) | **130–32** | 130 | 107–148 | 100% | 0% |
+| 2001 Mariners (116–46) | **129–33** | 129 | 107–144 | 99.3% | 0% |
+| 1998 Yankees (114–48) | **128–34** | 128 | 109–144 | 99.6% | 0% |
+| 1975 Reds (108–54) | **117–45** | 117 | 98–137 | 95.8% | 0% |
+| 2005 Cardinals (100–62) | **110–52** | 110 | 87–129 | 95.8% | 0% |
+
+What to read into it:
+
+- **Every great real team comfortably beats its own real win total** (96–100% of seasons).
+  That's expected — here they face a fixed league-*average* opponent all year, not the
+  real league that also contained other strong clubs.
+- **Murderers' Row (1927 Yankees) grades highest.** Ruth and Gehrig tower over the 1927
+  curve, so the z-score loves them; the Big Red Machine and the balanced 2005 Cardinals
+  sit a tier lower, paced by their stars but with less peak value top to bottom.
+- **None reach 162-0**, and they top out around 148 wins. Even the best real rosters land
+  well short of an optimized *all-eras* fantasy team (which goes 162-0 ~41% of the time) —
+  a single real club can't match hand-picked peaks from a century of baseball. Good
+  calibration: real greatness is ~110–130 wins here; perfection is reserved for the
+  cross-era dream teams.
+
+*Caveats: the opponent is league-average (not the real league that season); the lineup is
+the nine best bats with no positions or defense; no pitcher fatigue. The 1927 lineup
+borrows a second catcher (Johnny Grabowski) to fill nine, since the Yankees' catching
+platoon left only eight everyday-floor regulars. Reproduce with*
+`pipeline/tuning/real_team.py` *+* `real_team.ts`.
+
 ## What the simulation deliberately ignores
 
 To stay fast, fair, and explainable, the engine leaves a lot out. It does **not** model:
