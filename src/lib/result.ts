@@ -84,6 +84,119 @@ export function topPerformerName(result: SeasonResult, picks: DraftPick[]): stri
   return picks.find((p) => p.playerId === id)?.name ?? id;
 }
 
+export type HitterLine = {
+  playerId: string;
+  name: string;
+  pa: number;
+  ab: number;
+  h: number;
+  b2: number;
+  b3: number;
+  hr: number;
+  bb: number;
+  rbi: number;
+  r: number;
+  avg: number;
+  obp: number;
+  slg: number;
+  ops: number;
+};
+
+export type PitcherLine = {
+  playerId: string;
+  name: string;
+  role: "SP" | "RP";
+  gs: number; // games started (0 for the reliever)
+  g: number; // appearances
+  ip: number; // innings pitched (whole — the sim has no partial innings)
+  r: number; // runs allowed (all earned; no errors modeled)
+  era: number;
+};
+
+export type PlayerStats = { hitters: HitterLine[]; pitchers: PitcherLine[] };
+
+const ROTATION_SLOTS = ["SP1", "SP2", "SP3"] as const;
+
+/**
+ * Per-player season lines (T080) for the box-score "Season stats" view.
+ *
+ * Hitters are exact: the sim logs a real BattingLine per slot each game, so we sum
+ * them into a full slash line (AB = PA − BB; the sim folds HBP/SF into BB and models
+ * no SF, so AB is clean). Pitchers carry no per-pitcher line in the sim, so we
+ * reconstruct GS/IP/R/ERA from what IS recorded: the rotation is deterministic
+ * (starter = (game−1) % 3), the starter throws innings 1–6 and the reliever 7+, and
+ * each game log already has the opponent's runs per inning. K/W–L aren't derivable
+ * (outs are generic; decisions aren't tracked) so they're omitted.
+ */
+export function playerSeasonStats(result: SeasonResult, picks: DraftPick[]): PlayerStats {
+  const nameOf = (id: string) => picks.find((p) => p.playerId === id)?.name ?? id;
+
+  // Hitters — accumulate by playerId, preserving the batting order from game 1.
+  type Agg = { pa: number; h: number; b2: number; b3: number; hr: number; bb: number; rbi: number; r: number };
+  const fresh = (): Agg => ({ pa: 0, h: 0, b2: 0, b3: 0, hr: 0, bb: 0, rbi: 0, r: 0 });
+  const order: string[] = [];
+  const acc = new Map<string, Agg>();
+  for (const g of result.gameLogs) {
+    for (const b of g.batting) {
+      let a = acc.get(b.playerId);
+      if (!a) {
+        a = fresh();
+        acc.set(b.playerId, a);
+        order.push(b.playerId);
+      }
+      a.pa += b.pa;
+      a.h += b.h;
+      a.b2 += b.b2;
+      a.b3 += b.b3;
+      a.hr += b.hr;
+      a.bb += b.bb;
+      a.rbi += b.rbi;
+      a.r += b.r;
+    }
+  }
+  const hitters: HitterLine[] = order.map((id) => {
+    const a = acc.get(id)!;
+    const ab = a.pa - a.bb;
+    const tb = a.h - a.b2 - a.b3 - a.hr + 2 * a.b2 + 3 * a.b3 + 4 * a.hr;
+    const avg = ab > 0 ? a.h / ab : 0;
+    const obp = a.pa > 0 ? (a.h + a.bb) / a.pa : 0;
+    const slg = ab > 0 ? tb / ab : 0;
+    return { playerId: id, name: nameOf(id), pa: a.pa, ab, h: a.h, b2: a.b2, b3: a.b3, hr: a.hr, bb: a.bb, rbi: a.rbi, r: a.r, avg, obp, slg, ops: obp + slg };
+  });
+
+  // Pitchers — reconstruct from the rotation cycle + per-inning opponent runs.
+  const rotation = ROTATION_SLOTS.map((s) => picks.find((p) => p.slot === s)).filter((p): p is DraftPick => p != null);
+  const rpPick = picks.find((p) => p.slot === "RP");
+  const spAgg = rotation.map(() => ({ gs: 0, ip: 0, r: 0 }));
+  const rp = { g: 0, ip: 0, r: 0 };
+  if (rotation.length > 0) {
+    for (const g of result.gameLogs) {
+      const innings = g.away.innings;
+      const si = (g.game - 1) % rotation.length;
+      spAgg[si]!.gs += 1;
+      spAgg[si]!.ip += Math.min(6, innings.length);
+      spAgg[si]!.r += innings.slice(0, 6).reduce((s, x) => s + x, 0);
+      rp.g += 1;
+      rp.ip += Math.max(0, innings.length - 6);
+      rp.r += innings.slice(6).reduce((s, x) => s + x, 0);
+    }
+  }
+  const era = (r: number, ip: number) => (ip > 0 ? (r * 9) / ip : 0);
+  const pitchers: PitcherLine[] = rotation.map((p, i) => ({
+    playerId: p.playerId,
+    name: p.name,
+    role: "SP",
+    gs: spAgg[i]!.gs,
+    g: spAgg[i]!.gs,
+    ip: spAgg[i]!.ip,
+    r: spAgg[i]!.r,
+    era: era(spAgg[i]!.r, spAgg[i]!.ip),
+  }));
+  if (rpPick) pitchers.push({ playerId: rpPick.playerId, name: rpPick.name, role: "RP", gs: 0, g: rp.g, ip: rp.ip, r: rp.r, era: era(rp.r, rp.ip) });
+
+  return { hitters, pitchers };
+}
+
 /** One headline feat — varied across qualifying season stats (no longer always the streak). */
 export function primaryHighlight(result: SeasonResult): string {
   const s = seasonStats(result);

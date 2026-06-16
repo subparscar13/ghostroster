@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { playerSeasonStats } from "@/lib/result";
 import type { DraftPick } from "@/lib/types";
 import type { GameLog, SeasonResult } from "@/sim/types";
 
@@ -19,7 +20,9 @@ export function BoxScores({
   initialGame?: number | null;
 }) {
   const [selected, setSelected] = useState<number | null>(initialGame);
+  const [view, setView] = useState<"log" | "stats">("log");
   const nameById = useMemo(() => new Map(picks.map((p) => [p.playerId, p.name])), [picks]);
+  const stats = useMemo(() => playerSeasonStats(result, picks), [result, picks]);
   const game = selected != null ? result.gameLogs[selected - 1] : null;
 
   return (
@@ -37,27 +40,121 @@ export function BoxScores({
         <GameDetail game={game} nameById={nameById} />
       ) : (
         <>
-          <h1 className="mt-3 text-center font-display text-2xl font-medium uppercase">Season log</h1>
-          <div className="mt-4 divide-y divide-faded/40 rounded-lg border border-faded/50">
-            {result.gameLogs.map((g) => (
-              <button
-                key={g.game}
-                onClick={() => setSelected(g.game)}
-                className="flex w-full items-center justify-between px-3 py-2 text-left font-mono text-xs hover:bg-gold/10"
-              >
-                <span className="text-ink-faint">Game {g.game}</span>
-                <span className="flex items-center gap-3">
-                  <span className={g.win ? "text-navy" : "text-vintage"}>{g.win ? "W" : "L"}</span>
-                  <span className="tabular-nums text-ink">
-                    {g.home.runs}–{g.away.runs}
-                  </span>
-                  {g.away.hits === 0 && <span className="text-gold-ink">no-no</span>}
-                </span>
-              </button>
-            ))}
+          <div className="mt-3 flex justify-center gap-5 font-mono text-[11px] uppercase tracking-wider">
+            <Tab active={view === "log"} onClick={() => setView("log")}>Season log</Tab>
+            <Tab active={view === "stats"} onClick={() => setView("stats")}>Season stats</Tab>
           </div>
+
+          {view === "log" ? (
+            <div className="mt-4 divide-y divide-faded/40 rounded-lg border border-faded/50">
+              {result.gameLogs.map((g) => (
+                <button
+                  key={g.game}
+                  onClick={() => setSelected(g.game)}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left font-mono text-xs hover:bg-gold/10"
+                >
+                  <span className="text-ink-faint">Game {g.game}</span>
+                  <span className="flex items-center gap-3">
+                    <span className={g.win ? "text-navy" : "text-vintage"}>{g.win ? "W" : "L"}</span>
+                    <span className="tabular-nums text-ink">
+                      {g.home.runs}–{g.away.runs}
+                    </span>
+                    {g.away.hits === 0 && <span className="text-gold-ink">no-no</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <SeasonStats stats={stats} />
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`pb-1 ${active ? "border-b-2 border-gold text-ink" : "text-ink-faint hover:text-ink"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Format a rate stat baseball-style: 3 decimals, leading zero dropped under 1.000. */
+function rate(x: number): string {
+  const s = x.toFixed(3);
+  return x < 1 ? s.replace(/^0/, "") : s;
+}
+
+function SeasonStats({ stats }: { stats: ReturnType<typeof playerSeasonStats> }) {
+  return (
+    <div className="mt-4">
+      <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Hitters</h2>
+      <div className="mt-2 overflow-x-auto">
+        <table className="w-full min-w-max font-mono text-[11px]">
+          <thead>
+            <tr className="border-b border-faded text-ink-faint">
+              <th className="py-1 pr-2 text-left font-normal">Batter</th>
+              {["AB", "R", "H", "2B", "3B", "HR", "RBI", "BB", "AVG", "OBP", "SLG", "OPS"].map((c) => (
+                <th key={c} className="px-1.5 font-normal">{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {stats.hitters.map((h) => (
+              <tr key={h.playerId} className="border-b border-faded/30">
+                <td className="py-1 pr-2 font-display text-sm">{h.name}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.ab}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.r}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.h}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.b2}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.b3}</td>
+                <td className="px-1.5 text-center tabular-nums text-ink">{h.hr}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.rbi}</td>
+                <td className="px-1.5 text-center tabular-nums">{h.bb}</td>
+                <td className="px-1.5 text-center tabular-nums">{rate(h.avg)}</td>
+                <td className="px-1.5 text-center tabular-nums">{rate(h.obp)}</td>
+                <td className="px-1.5 text-center tabular-nums">{rate(h.slg)}</td>
+                <td className="px-1.5 text-center tabular-nums text-ink">{rate(h.ops)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Pitchers</h2>
+      <table className="mt-2 w-full font-mono text-[11px]">
+        <thead>
+          <tr className="border-b border-faded text-ink-faint">
+            <th className="py-1 pr-2 text-left font-normal">Pitcher</th>
+            <th className="px-1.5 font-normal">G</th>
+            <th className="px-1.5 font-normal">IP</th>
+            <th className="px-1.5 font-normal">R</th>
+            <th className="px-1.5 font-normal">ERA</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stats.pitchers.map((p) => (
+            <tr key={p.playerId} className="border-b border-faded/30">
+              <td className="py-1 pr-2 font-display text-sm">
+                {p.name} <span className="font-mono text-[10px] text-ink-faint">{p.role}</span>
+              </td>
+              <td className="px-1.5 text-center tabular-nums">{p.g}</td>
+              <td className="px-1.5 text-center tabular-nums">{p.ip}</td>
+              <td className="px-1.5 text-center tabular-nums">{p.r}</td>
+              <td className="px-1.5 text-center tabular-nums text-ink">{p.era.toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-faint">
+        Pitching lines are reconstructed from the rotation (starter: innings 1–6, reliever: 7+). The
+        engine doesn&rsquo;t track strikeouts or decisions, so K and W–L aren&rsquo;t shown.
+      </p>
     </div>
   );
 }

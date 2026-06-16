@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { primaryHighlight, quip, seasonStats, topPerformerName } from "../src/lib/result";
+import { playerSeasonStats, primaryHighlight, quip, seasonStats, topPerformerName } from "../src/lib/result";
+import type { DraftPick } from "../src/lib/types";
 import type { BattingLine, GameLog, Highlights, SeasonResult } from "../src/sim/types";
 
 // Record-only result (empty logs) for quote/highlight selection tests.
@@ -74,6 +75,56 @@ describe("quip", () => {
   it("resolves the top performer's drafted name", () => {
     const picks = [{ slot: "RF" as const, playerId: "ruth", name: "Babe Ruth", kind: "hitter" as const, tag: "'27 NYY" }];
     expect(topPerformerName(mk(162, 0), picks)).toBe("Babe Ruth");
+  });
+});
+
+describe("playerSeasonStats", () => {
+  // 3 games so each starter (game-1)%3 gets exactly one start; per-inning opponent
+  // runs drive the reconstructed pitching lines.
+  const hit = (playerId: string, pa: number, h: number, b2: number, hr: number, bb: number, rbi: number, r: number): BattingLine => ({ playerId, pa, h, b2, b3: 0, hr, bb, rbi, r });
+  const glog = (gameNum: number, awayInnings: number[]): GameLog => ({
+    game: gameNum,
+    home: { runs: 5, hits: 9, innings: [] },
+    away: { runs: awayInnings.reduce((s, x) => s + x, 0), hits: 5, innings: awayInnings },
+    batting: [hit("h1", 4, 2, 1, 1, 0, 2, 1), hit("h2", 4, 1, 0, 0, 1, 0, 0)],
+    win: true,
+  });
+  const result: SeasonResult = {
+    record: { w: 3, l: 0 },
+    grade: "A+",
+    highlights: { longestWinStreak: 3, noHitters: 0, bestGame: 1, worstGame: 1, topPerformer: "h1" },
+    gameLogs: [glog(1, [1, 0, 0, 0, 0, 0, 2, 0, 0]), glog(2, [0, 0, 1, 0, 0, 0, 0, 0, 0]), glog(3, [0, 0, 0, 0, 0, 0, 1, 0, 0, 0])],
+  };
+  const picks = [
+    { slot: "C", playerId: "h1", name: "Hitter One", kind: "hitter", tag: "" },
+    { slot: "1B", playerId: "h2", name: "Hitter Two", kind: "hitter", tag: "" },
+    { slot: "SP1", playerId: "sp1", name: "Starter One", kind: "sp", tag: "" },
+    { slot: "SP2", playerId: "sp2", name: "Starter Two", kind: "sp", tag: "" },
+    { slot: "SP3", playerId: "sp3", name: "Starter Three", kind: "sp", tag: "" },
+    { slot: "RP", playerId: "rp", name: "Reliever", kind: "rp", tag: "" },
+  ] as DraftPick[];
+
+  const { hitters, pitchers } = playerSeasonStats(result, picks);
+
+  it("aggregates hitter slash lines in batting order", () => {
+    expect(hitters.map((h) => h.playerId)).toEqual(["h1", "h2"]);
+    const h1 = hitters[0]!;
+    expect([h1.pa, h1.ab, h1.h, h1.hr, h1.rbi, h1.r]).toEqual([12, 12, 6, 3, 6, 3]);
+    expect(h1.avg).toBeCloseTo(0.5, 5); // 6/12
+    expect(h1.slg).toBeCloseTo(1.5, 5); // 18 TB / 12 AB
+    expect(h1.ops).toBeCloseTo(2.0, 5);
+    const h2 = hitters[1]!;
+    expect([h2.ab, h2.bb]).toEqual([9, 3]); // AB = PA - BB
+    expect(h2.obp).toBeCloseTo(0.5, 5); // (3 H + 3 BB) / 12 PA
+  });
+
+  it("reconstructs pitcher lines from the rotation + per-inning runs", () => {
+    const by = Object.fromEntries(pitchers.map((p) => [p.playerId, p]));
+    expect(by.sp1).toMatchObject({ gs: 1, ip: 6, r: 1 });
+    expect(by.sp1!.era).toBeCloseTo(1.5, 5); // 1*9/6
+    expect(by.sp3).toMatchObject({ gs: 1, ip: 6, r: 0 });
+    expect(by.rp).toMatchObject({ role: "RP", g: 3, ip: 10, r: 3 }); // innings 7+: 3+3+4
+    expect(by.rp!.era).toBeCloseTo(2.7, 5); // 3*9/10
   });
 });
 
