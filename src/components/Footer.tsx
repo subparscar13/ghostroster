@@ -5,6 +5,8 @@
  * every route. Update TIP_JAR once a real Ko-fi-style link exists.
  */
 
+import Link from "next/link";
+
 import { CommentBox } from "./CommentBox";
 
 const TIP_JAR = "https://ko-fi.com/"; // TODO: replace with the real tip-jar URL at launch
@@ -24,6 +26,10 @@ export function Footer() {
       </p>
       <p className="mt-1">Franchises shown as text only — not affiliated with or endorsed by MLB or the MLBPA.</p>
       <p className="mt-1">
+        <Link href="/how-it-works" className="underline decoration-faded underline-offset-2 hover:text-ink">
+          how it works
+        </Link>
+        <span aria-hidden> · </span>
         <a href={TIP_JAR} className="underline decoration-faded underline-offset-2 hover:text-ink">
           tip jar
         </a>

@@ -1,5 +1,10 @@
 # How the simulation works (plain-English guide)
 
+> **This is the technical companion.** Players read the curated, themed version in the
+> app at `/how-it-works` (`src/app/how-it-works/page.tsx`); keep the two in rough sync.
+> This file additionally carries the engineering/governance detail (file paths, the
+> z-score math, decision-log refs).
+
 Ghost Roster doesn't decide games with a hidden "rating." It plays actual baseball —
 one plate appearance at a time — using each player's real career numbers. This guide
 explains how those stats turn into wins, with no math background required.
