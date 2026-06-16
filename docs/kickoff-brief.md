@@ -58,7 +58,7 @@ simulateSeason(roster: Roster, opponent: OpponentModel, seed: uint32) → Season
 
 - Each PA: batter outcome vector blended vs. pitcher via log5/odds-ratio against the league baseline; sample with seeded RNG.
 - Base-out state machine: 24 base-out states; simple advancement table (single: runners +1 base, +2 from 2nd 50%; double: +2; etc. — keep the table dumb and documented, tune only if run environment validation fails).
-- Innings/extra innings standard; 162 games; rotation cycles SP1→SP2→SP3; RP pitches innings 7–9 every game (no fatigue model in v1 — flag as tuning lever).
+- Innings/extra innings standard; 162 games; rotation cycles SP1→SP2→SP3; RP pitches innings 7–9 every game (no fatigue model in v1 — flag as tuning lever). *(Updated by D-013: starter goes 1–8 and completes the game on a live no-hitter; reliever otherwise. No fatigue still.)*
 - **RNG:** mulberry32 (or xoshiro128**), seeded; must reproduce identical results across browsers. Daily seed = hash(salt + YYYY-MM-DD).
 - **Performance:** full 162-game season < 2s on a mid-range phone (~38 PA/game × 162 × 2 sides ≈ 12K samples — trivial; budget covers box-score bookkeeping too).
 

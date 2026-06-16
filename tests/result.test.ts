@@ -18,6 +18,7 @@ const game = (homeRuns: number, awayRuns: number, batting: BattingLine[]): GameL
   home: { runs: homeRuns, hits: batting.reduce((s, b) => s + b.h, 0), innings: [] },
   away: { runs: awayRuns, hits: awayRuns === 0 ? 0 : 5, innings: [] },
   batting,
+  pitching: { spIp: 8, spR: awayRuns, rpIp: 1, rpR: 0 },
   win: homeRuns > awayRuns,
 });
 const withLogs = (logs: GameLog[], h: Partial<Highlights> = {}): SeasonResult => {
@@ -82,18 +83,23 @@ describe("playerSeasonStats", () => {
   // 3 games so each starter (game-1)%3 gets exactly one start; per-inning opponent
   // runs drive the reconstructed pitching lines.
   const hit = (playerId: string, pa: number, h: number, b2: number, hr: number, bb: number, rbi: number, r: number): BattingLine => ({ playerId, pa, h, b2, b3: 0, hr, bb, rbi, r });
-  const glog = (gameNum: number, awayInnings: number[]): GameLog => ({
+  const glog = (gameNum: number, pitching: GameLog["pitching"]): GameLog => ({
     game: gameNum,
     home: { runs: 5, hits: 9, innings: [] },
-    away: { runs: awayInnings.reduce((s, x) => s + x, 0), hits: 5, innings: awayInnings },
+    away: { runs: pitching.spR + pitching.rpR, hits: 5, innings: [] },
     batting: [hit("h1", 4, 2, 1, 1, 0, 2, 1), hit("h2", 4, 1, 0, 0, 1, 0, 0)],
+    pitching,
     win: true,
   });
   const result: SeasonResult = {
     record: { w: 3, l: 0 },
     grade: "A+",
     highlights: { longestWinStreak: 3, noHitters: 0, bestGame: 1, worstGame: 1, topPerformer: "h1" },
-    gameLogs: [glog(1, [1, 0, 0, 0, 0, 0, 2, 0, 0]), glog(2, [0, 0, 1, 0, 0, 0, 0, 0, 0]), glog(3, [0, 0, 0, 0, 0, 0, 1, 0, 0, 0])],
+    gameLogs: [
+      glog(1, { spIp: 8, spR: 1, rpIp: 1, rpR: 2 }),
+      glog(2, { spIp: 8, spR: 1, rpIp: 1, rpR: 0 }),
+      glog(3, { spIp: 9, spR: 0, rpIp: 0, rpR: 0 }), // SP3 complete-game shutout — reliever sits
+    ],
   };
   const picks = [
     { slot: "C", playerId: "h1", name: "Hitter One", kind: "hitter", tag: "" },
@@ -118,13 +124,13 @@ describe("playerSeasonStats", () => {
     expect(h2.obp).toBeCloseTo(0.5, 5); // (3 H + 3 BB) / 12 PA
   });
 
-  it("reconstructs pitcher lines from the rotation + per-inning runs", () => {
+  it("attributes pitcher lines from each game's recorded split", () => {
     const by = Object.fromEntries(pitchers.map((p) => [p.playerId, p]));
-    expect(by.sp1).toMatchObject({ gs: 1, ip: 6, r: 1 });
-    expect(by.sp1!.era).toBeCloseTo(1.5, 5); // 1*9/6
-    expect(by.sp3).toMatchObject({ gs: 1, ip: 6, r: 0 });
-    expect(by.rp).toMatchObject({ role: "RP", g: 3, ip: 10, r: 3 }); // innings 7+: 3+3+4
-    expect(by.rp!.era).toBeCloseTo(2.7, 5); // 3*9/10
+    expect(by.sp1).toMatchObject({ gs: 1, ip: 8, r: 1 });
+    expect(by.sp1!.era).toBeCloseTo(1.125, 5); // 1*9/8
+    expect(by.sp3).toMatchObject({ gs: 1, ip: 9, r: 0 }); // complete game
+    expect(by.rp).toMatchObject({ role: "RP", g: 2, ip: 2, r: 2 }); // only games 1 & 2 (not the CG)
+    expect(by.rp!.era).toBeCloseTo(9, 5); // 2*9/2
   });
 });
 

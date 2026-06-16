@@ -152,8 +152,9 @@ function SeasonStats({ stats }: { stats: ReturnType<typeof playerSeasonStats> })
         </tbody>
       </table>
       <p className="mt-3 font-mono text-[10px] leading-relaxed text-ink-faint">
-        Pitching lines are reconstructed from the rotation (starter: innings 1–6, reliever: 7+). The
-        engine doesn&rsquo;t track strikeouts or decisions, so K and W–L aren&rsquo;t shown.
+        Starters go 8 innings (and finish the game if they&rsquo;re still throwing a no-hitter); the
+        reliever closes otherwise. The engine doesn&rsquo;t track strikeouts or decisions, so K and W–L
+        aren&rsquo;t shown.
       </p>
     </div>
   );

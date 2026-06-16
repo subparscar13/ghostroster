@@ -61,11 +61,17 @@ export type BattingLine = {
   r: number;
 };
 
+/** Innings + runs charged to the starter vs. the reliever in one game. Innings are
+ * whole (the sim has no mid-inning changes); runs are all earned. Recorded directly
+ * by the sim so per-pitcher season lines don't depend on re-deriving the usage rule. */
+export type PitchingSplit = { spIp: number; spR: number; rpIp: number; rpR: number };
+
 export type GameLog = {
   game: number;
   home: LineScore;
   away: LineScore;
   batting: BattingLine[];
+  pitching: PitchingSplit;
   win: boolean;
 };
 

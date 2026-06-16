@@ -65,10 +65,11 @@ M3 UI spin/draft/result (3) → M4 box scores/share/daily (2.5) → M5 polish/de
 
 ## Open tuning items — flag, don't silently resolve
 
-Pitcher eligibility thresholds + RP usage rule (ship §3 defaults); 2B/3B-allowed
-estimation from league splits; ~~z-score fallback for outlier seasons (1968)~~
+Pitcher eligibility thresholds; ~~RP usage rule~~ **resolved → starter 1–8 + complete-game
+no-hitters, reliever otherwise (D-013)**; 2B/3B-allowed estimation from league splits;
+~~z-score fallback for outlier seasons (1968)~~
 **resolved → z-score era projection is the method, `SCALE=0.33` (D-011)**;
-base-out advancement table + no-RP-fatigue lever; grade-scale design;
+base-out advancement table + no-RP-fatigue lever (still open); grade-scale design;
 "best possible team today" solver (P1); run-environment / 162-0 / near-miss
 calibration targets (M2). `ghostroster.app` + social handles: Justin's action,
 time-sensitive (D-006).

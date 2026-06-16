@@ -9,6 +9,7 @@ function mkResult(wins: boolean[]): SeasonResult {
     home: { runs: 0, hits: 0, innings: [] },
     away: { runs: 0, hits: 0, innings: [] },
     batting: [],
+    pitching: { spIp: 8, spR: 0, rpIp: 1, rpR: 0 },
     win,
   }));
   const w = wins.filter(Boolean).length;

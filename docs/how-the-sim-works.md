@@ -139,8 +139,9 @@ rulebook** (no hidden cleverness):
   version — kept intentionally simple.)
 
 Three outs end a half-inning; nine innings (or extras if tied) end a game; the starting
-pitcher works innings 1–6 and the reliever finishes; 162 games make a season. Add it all
-up and you get a record, box scores, and streaks.
+pitcher works innings 1–8 and the reliever finishes — unless the starter is still
+throwing a no-hitter, in which case he stays in to complete the game (D-013); 162 games
+make a season. Add it all up and you get a record, box scores, and streaks.
 
 So a stat's "weight" is really just: **how much it sizes the slices of the die — which,
 rolled ~76 times a game across 162 games, compounds into wins and losses.**

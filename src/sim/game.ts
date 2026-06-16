@@ -3,8 +3,10 @@
  *
  * One game = my roster (home) vs the opponent model (away). My hitters face the
  * opponent's pitching every inning; the opponent's league-average hitters face my
- * starter for innings 1–6 and my reliever for 7+ (the v1 usage rule, no fatigue —
- * flagged lever). The league baseline for every blend is NEUTRAL.
+ * starter for innings 1–8, then my reliever finishes — UNLESS the starter is working
+ * a no-hitter (opponent still hitless), in which case he stays in to complete the
+ * game (and any extra innings while the no-no holds). The v1 usage rule, no fatigue
+ * (flagged lever; D-013). The league baseline for every blend is NEUTRAL.
  *
  * Simplifications (deliberately dumb, flagged like the advancement table): both
  * sides always bat a full 9 (no skip-bottom-9-when-leading, no walk-off), and
@@ -89,17 +91,28 @@ export function playGame(
   let oppHits = 0;
   let myIndex = 0;
   let oppIndex = 0;
+  const pitching = { spIp: 0, spR: 0, rpIp: 0, rpR: 0 };
 
   let inning = 0;
   do {
     inning++;
-    // Top half: opponent (league-average hitters) bats vs my pitching.
-    const myPitcher = inning <= 6 ? sp.allowed : rp.allowed;
+    // Top half: opponent (league-average hitters) bats vs my pitching. The starter
+    // goes innings 1–8, then stays in only while he's still no-hitting; otherwise the
+    // reliever finishes. `oppHits` here is the hit total through prior innings.
+    const starterPitching = inning <= 8 || oppHits === 0;
+    const myPitcher = starterPitching ? sp.allowed : rp.allowed;
     const top = halfInning(() => opponent.batter, oppIndex, myPitcher, rng, null);
     oppRuns += top.runs;
     oppHits += top.hits;
     oppIndex = top.nextIndex;
     oppInnings.push(top.runs);
+    if (starterPitching) {
+      pitching.spIp++;
+      pitching.spR += top.runs;
+    } else {
+      pitching.rpIp++;
+      pitching.rpR += top.runs;
+    }
 
     // Bottom half: my lineup bats vs the opponent's pitching.
     const bottom = halfInning((slot) => lineup[slot]!.vector, myIndex, opponent.pitcher, rng, box);
@@ -114,6 +127,7 @@ export function playGame(
     home: { runs: myRuns, hits: myHits, innings: myInnings },
     away: { runs: oppRuns, hits: oppHits, innings: oppInnings },
     batting: box,
+    pitching,
     win: myRuns > oppRuns,
   };
 }

@@ -22,21 +22,21 @@ describe("golden master", () => {
   });
 
   it("reproduces the pinned season digest", () => {
-    expect(seasonDigest(result)).toBe(3142536333);
+    expect(seasonDigest(result)).toBe(2688535349);
   });
 
   it("reproduces the pinned highlights", () => {
     expect(result.highlights).toEqual({
-      longestWinStreak: 17,
-      noHitters: 2,
-      bestGame: 86,
-      worstGame: 2,
+      longestWinStreak: 24,
+      noHitters: 0,
+      bestGame: 110,
+      worstGame: 40,
       topPerformer: "h2",
     });
   });
 
   it("is stable across repeated runs (same digest)", () => {
     const again = simulateSeason(FIXED_ROSTER, LEAGUE_AVERAGE_OPPONENT, FIXED_SEED);
-    expect(seasonDigest(again)).toBe(3142536333);
+    expect(seasonDigest(again)).toBe(2688535349);
   });
 });

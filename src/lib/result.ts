@@ -122,11 +122,11 @@ const ROTATION_SLOTS = ["SP1", "SP2", "SP3"] as const;
  *
  * Hitters are exact: the sim logs a real BattingLine per slot each game, so we sum
  * them into a full slash line (AB = PA − BB; the sim folds HBP/SF into BB and models
- * no SF, so AB is clean). Pitchers carry no per-pitcher line in the sim, so we
- * reconstruct GS/IP/R/ERA from what IS recorded: the rotation is deterministic
- * (starter = (game−1) % 3), the starter throws innings 1–6 and the reliever 7+, and
- * each game log already has the opponent's runs per inning. K/W–L aren't derivable
- * (outs are generic; decisions aren't tracked) so they're omitted.
+ * no SF, so AB is clean). Pitchers are exact too: each game records the innings +
+ * runs charged to its starter vs. reliever (`GameLog.pitching`), and the rotation is
+ * deterministic (starter = (game−1) % rotation length), so we attribute the split to
+ * the right arm. K/W–L aren't tracked (outs are generic; decisions aren't recorded)
+ * so they're omitted.
  */
 export function playerSeasonStats(result: SeasonResult, picks: DraftPick[]): PlayerStats {
   const nameOf = (id: string) => picks.find((p) => p.playerId === id)?.name ?? id;
@@ -164,21 +164,21 @@ export function playerSeasonStats(result: SeasonResult, picks: DraftPick[]): Pla
     return { playerId: id, name: nameOf(id), pa: a.pa, ab, h: a.h, b2: a.b2, b3: a.b3, hr: a.hr, bb: a.bb, rbi: a.rbi, r: a.r, avg, obp, slg, ops: obp + slg };
   });
 
-  // Pitchers — reconstruct from the rotation cycle + per-inning opponent runs.
+  // Pitchers — attribute each game's recorded starter/reliever split to the right arm
+  // (rotation is deterministic: starter = (game-1) % rotation length).
   const rotation = ROTATION_SLOTS.map((s) => picks.find((p) => p.slot === s)).filter((p): p is DraftPick => p != null);
   const rpPick = picks.find((p) => p.slot === "RP");
   const spAgg = rotation.map(() => ({ gs: 0, ip: 0, r: 0 }));
   const rp = { g: 0, ip: 0, r: 0 };
   if (rotation.length > 0) {
     for (const g of result.gameLogs) {
-      const innings = g.away.innings;
       const si = (g.game - 1) % rotation.length;
       spAgg[si]!.gs += 1;
-      spAgg[si]!.ip += Math.min(6, innings.length);
-      spAgg[si]!.r += innings.slice(0, 6).reduce((s, x) => s + x, 0);
-      rp.g += 1;
-      rp.ip += Math.max(0, innings.length - 6);
-      rp.r += innings.slice(6).reduce((s, x) => s + x, 0);
+      spAgg[si]!.ip += g.pitching.spIp;
+      spAgg[si]!.r += g.pitching.spR;
+      if (g.pitching.rpIp > 0) rp.g += 1; // the reliever sits out complete-game no-hitters
+      rp.ip += g.pitching.rpIp;
+      rp.r += g.pitching.rpR;
     }
   }
   const era = (r: number, ip: number) => (ip > 0 ? (r * 9) / ip : 0);
