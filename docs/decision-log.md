@@ -18,7 +18,7 @@ A real sim · B head-to-head · C niche player pool · D portfolio piece. A and 
 
 ## D-003 — Simulation/rating model ⛔ blocking
 **Status:** ✅ Decided 2026-06-12 — **Markov-chain PA-level sim**, with **box scores / season output in v1** (not deferred to P1).
-**Era adjustment:** league-relative rates (player rate ÷ league average that season, computable from Lahman alone). Z-scores remain a fallback if 1968-style outlier seasons distort results — validate in the tuning notebook.
+**Era adjustment:** league-relative rates (player rate ÷ league average that season, computable from Lahman alone). Z-scores remain a fallback if 1968-style outlier seasons distort results — validate in the tuning notebook. *(Superseded 2026-06-16 by **D-011**: the z-score fallback became the method — the ratio did distort low-offense eras.)*
 **Rationale:** Follows directly from D-001; threshold and Pythagorean models rejected as non-differentiating. Each PA samples from era-adjusted outcome vectors (BB/1B/2B/3B/HR/out), pitcher blend via log5/odds-ratio, base-out state machine, deterministic seed. Must run a 162-game season client-side in <2s (per game-design-notes.md). Practically unsolvable = durable fun.
 
 ## D-004 — Scope of v1
@@ -53,3 +53,18 @@ A real sim · B head-to-head · C niche player pool · D portfolio piece. A and 
 **Decision:** Since v1 ships no backend (constitution IV), the box POSTs to a **free third-party form service** (Formspree-class) — the same posture as the tip-jar link and the env-gated analytics. It is **inert until `NEXT_PUBLIC_COMMENT_ENDPOINT` is set** (mirrors `Analytics.tsx`); no infrastructure we run, no datastore we operate. Spam is handled by a hidden honeypot field + the service's filter. Supersedes the earlier "DMs only, no in-app link" feedback choice.
 **Constitution check:** Compatible with IV — third-party SaaS is permitted; only a backend/DB **we operate** is forbidden (Edge KV still reserved for the P1 leaderboard). Compatible with III — text only, no marks/photos.
 **Privacy:** Comment text + optional name go to the third-party form provider; the app collects nothing else and stores nothing. A one-line note in the modal says so.
+
+## D-011 — Z-score era normalization (sim tuning, v1.1)
+**Status:** ✅ Decided 2026-06-16 — **Replace the league-ratio era projection with a z-score projection** (promotes the D-003 fallback to the method).
+**Decision:** A player's era-adjusted per-PA vector is now graded by **how many standard deviations he sits above his own era's eligible-regular distribution**, projected onto the neutral baseline:
+`adjusted_o = NEUTRAL_o × (1 + SCALE × z_o)`, where `z_o = (raw_o − mean_o) / std_o` and the mean+std are computed across the same eligibility gate the pool ships (≥ 80 G & 200 PA hitters; ≥ 20 GS / ≥ 30 relief pitchers). **`SCALE = 0.33`**, calibrated (below) so the globally optimal roster reaches 162-0 ~30–45% of the time. The old projection — `NEUTRAL × raw/league` — is gone.
+**Why:** Two post-launch problems shared one root cause. (1) **Credibility:** in low-offense eras the league rate is tiny, so an ordinary edge became a huge *ratio*, over-amplifying dead-ball seasons in the rankings (flagged in `docs/how-the-sim-works.md` as "a known rough edge"). (2) **Difficulty:** the optimal-roster ceiling went 162-0 **95.8%** of the time, so the marquee goal felt unearned. Measuring deviation against the era's actual spread of players fixes the rankings *and* gives one principled difficulty knob. (Plain damping of the ratio was rejected — it compresses magnitudes but preserves rank order, so it cannot fix the rankings.) D-003 already named z-scores as the documented fallback for exactly this distortion.
+**Calibration (4,000-seed ceiling + 3,000 best-pick drafts, lahman-2025):**
+
+| 162-0 | baseline (ratio) | z-score SCALE=0.33 |
+|---|---|---|
+| **Ceiling** (best-possible roster) | 95.8% | **41.1%** (161-1 37%, 160-2 16%, 159-3 5%) |
+| **Realistic** (best-pick draft) | 0.13%, mean 150.1 W | **0.07%, mean 148.9 W**, 145–158 band 82% |
+
+The realistic frame players actually experience is essentially unchanged (still ~0.1% perfect, mean ~149); the ceiling is now a genuine accomplishment. Picking which 162-0 ceiling to target (moderate, ~30–45%) was Justin's call.
+**Determinism/governance:** `SCALE` is a pinned module constant in `vectors.py`; same edition + default → byte-identical output (constitution V, verified). A `GR_ZSCALE` env var overrides it for offline calibration sweeps only — production builds leave it unset. Re-pinned the known-vector, real-spotcheck, and golden checks. No change to the pure sim (the projection is upstream, pipeline-side), so PvP insurance (D-001) is unaffected.

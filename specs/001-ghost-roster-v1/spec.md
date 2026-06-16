@@ -88,7 +88,7 @@ A returning player opens the daily challenge: the same spins + sim seed for ever
 - **FR-012**: System MUST represent franchises as text only — no logos, marks, or player photos.
 - **FR-013**: System MUST source all player and league data from the Lahman Database (current edition, CC BY-SA), excluding Negro Leagues content from v1; no Baseball-Reference-scraped or MLB-API data anywhere, including build tooling.
 - **FR-014**: System MUST be playable without any account or signup; player state lives in local storage only.
-- **FR-015**: Era adjustment MUST be league-relative (a player's rate measured against the league rate for that season) so cross-decade rosters are comparable.
+- **FR-015**: Era adjustment MUST grade a player relative to his own era (a z-score against the league's eligible-regular distribution that season, projected onto a neutral baseline — decision-log D-011) so cross-decade rosters are comparable without over-amplifying low-offense eras.
 
 ### Key Entities *(include if feature involves data)*
 

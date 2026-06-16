@@ -40,28 +40,34 @@ Baseball from the 1920s and baseball from the 2000s are almost different sports.
 sluggers would dominate just because their *era* hit more homers — not because they were
 better relative to their peers.
 
-So we **grade every player on the curve of their own era**:
+So we **grade every player against the spread of his own era's regulars** — how far above
+(or below) the pack he stood, measured in *standard deviations*:
 
 ```
-player's chance of an outcome  =  how often THEY did it  ÷  how often their LEAGUE did it that year
+player's edge on an outcome  =  how many standard deviations he was above (or below)
+                                 the typical everyday regular of his league that year
 ```
 
-Then we drop that "how much better than average" ratio into one **neutral, modern-ish
-baseline** so everyone is finally measured on the same field.
+A standard deviation is just "a normal-sized gap from average." Being two of them above
+the mean means you were near the very top of your peers; being below the mean drags the
+slice down. We take that edge and nudge a single **neutral, modern-ish baseline** up or
+down by it, so everyone is finally measured on the same field.
 
-**Example — 1920 Babe Ruth.** Ruth homered several times more often than a typical 1920
-hitter. He was *enormously* above his league's curve. Applied to the neutral baseline,
-that makes his home-run slice balloon to about **33%** — a cartoonishly good die, which
-is exactly right: in his era he was a cartoon. A modern slugger with the same raw home
-run total grades out *lower*, because his league already hit a ton of homers, so he was
-less of an outlier.
+**Example — 1920 Babe Ruth.** Ruth walked and homered far more often than a typical 1920
+regular — several standard deviations clear of the pack on both. So his walk slice swells
+to about **21%** and his home-run slice to about **10%** (roughly three times the neutral
+baseline). Note it's *not* a cartoonish 33%: grading against the actual spread of players,
+not a raw ratio to a tiny dead-ball league rate, keeps even the greatest outlier
+believable. (His *single* slice actually shrinks — relative to his era he turned would-be
+singles into extra bases and walks.) A modern slugger with the same raw home-run total
+grades out lower, because his league was already full of sluggers, so he stood out less.
 
 Pitchers get a die the same way, but built from what they *gave up* (walks, hits, home
-runs allowed), so a great pitcher's die is mostly "out."
+runs allowed) versus their era's pitchers, so a great pitcher's die is mostly "out."
 
 This all happens once, offline, in a Python pipeline — the results are saved as data the
 website downloads. (Curious? It's `pipeline/src/ghostroster_pipeline/vectors.py`, the
-`_project` function.)
+`_project_z` function; the math is recorded in decision-log **D-011**.)
 
 ---
 
@@ -86,9 +92,10 @@ swing exactly as their data says, and your pitchers suppress runs exactly as the
 does.** (The same machinery is ready for a future player-vs-player mode, where a real
 opponent's die would slot in.)
 
-**Seeing the tug-of-war:** 1920 Ruth's die normally shows ~33% home runs. Put him against
-an elite ace who almost never allows homers, and the blend reweights him to roughly 16%
-home runs with far more outs. He's still great — just human against the best.
+**Seeing the tug-of-war:** 1920 Ruth's die normally shows ~10% home runs. Put him against
+an elite ace (prime Pedro Martínez, who almost never allowed homers), and the blend
+reweights him to roughly 4% home runs with far more outs (~78%). He's still great — just
+human against the best.
 
 ---
 
@@ -98,11 +105,11 @@ To turn the six percentages into a single result, we lay them end-to-end on a nu
 line from 0 to 1 and roll once:
 
 ```
-bb [0 – .256)   1B [.256 – .352)   2B [.352 – .412)   3B [.412 – .418)   HR [.418 – .747)   out [.747 – 1)
+bb [0 – .211)   1B [.211 – .230)   2B [.230 – .289)   3B [.289 – .294)   HR [.294 – .390)   out [.390 – 1)
         (this is 1920 Ruth's die, laid out)
 ```
 
-A random number, say **0.55**, falls in the home-run stretch → **home run**. A 0.90 would
+A random number, say **0.35**, falls in the home-run stretch → **home run**. A 0.90 would
 be an out. Because each player's slices are sized by their stats, **a great hitter simply
 lands on good outcomes more often.** That's the entire weighting, made visible.
 
@@ -137,10 +144,10 @@ rolled ~76 times a game across 162 games, compounds into wins and losses.**
 
 ## Putting it together: one trip to the plate
 
-1. Ruth's die (from his real 1920 season): `HR 33% · walk 26% · single 10% · double 6% ·
-   triple 0.5% · out 25%`.
+1. Ruth's die (from his real 1920 season): `walk 21% · HR 10% · double 6% · single 2% ·
+   triple 0.5% · out 61%`.
 2. He's facing the league-average team, so the matchup math leaves his die unchanged.
-3. The random roll is 0.55 → **home run.**
+3. The random roll is 0.35 → **home run.**
 4. There was a runner on first, so the rulebook scores **2 runs** and clears the bases.
 
 Multiply that by thousands of plate appearances and you get a season that *feels* earned —
@@ -157,33 +164,38 @@ sorted by raw stats or by conventional all-time lists, and that's what makes the
 
 - Each list mixes **many different eras** — exactly what grading on each era's curve is
   supposed to do.
-- A few **early-era names (1910s–20s)** rank surprisingly high. Offense was scarce back
-  then, so a player who towered over *that* environment grades out as elite today. This
-  also exposes a known rough edge: the deeper the dead-ball era, the more even a
-  modest-looking line gets amplified (a candidate for future tuning).
-- **Designated hitters and pitchers skew modern** — the DH is a modern role, and the
-  data's nastiest strikeout arms are recent.
+- A few **early-era names (1910s–20s)** rank high — Cobb, Speaker, Lajoie. Offense was
+  scarce back then, so a player who towered over *that* environment grades out as elite
+  today. (An earlier version *over*-amplified the dead ball, because it graded by a raw
+  ratio to a tiny league rate; the standard-deviation grading in **D-011** fixed that, so
+  these names are genuinely elite now rather than inflated.)
+- **The designated-hitter list skews modern** — the DH is a modern role. The pitching
+  lists, by contrast, span the whole timeline: prime Pedro Martínez sits beside Walter
+  Johnson, Bob Feller, and Bob Gibson, because each is measured against his own era's arms.
+- **Contact hitters rate well** — the value metric rewards reaching base and avoiding
+  outs, so high-average, low-strikeout bats (Carew, Gwynn, Arraez, Boggs) grade out near
+  the sluggers. That's a property of the metric, not a bug.
 
 A player appears under every position they were eligible to play; ranking uses the same
 value the draft/calibration tooling uses.
 
-**Catcher (C)** — Bill Salkeld ('45 PIT) · Rudy York ('37 DET) · Earl Smith ('21 NY1) · Bill DeLancey ('34 SLN) · Ernie Lombardi ('45 NY1) · Gabby Hartnett ('30 CHN) · Mickey Cochrane ('31 PHA) · Bill Dickey ('36 NYA) · Aaron Robinson ('46 NYA) · Jack Meyers ('12 NY1)
+**Catcher (C)** — Don Padgett ('39 SLN) · Bill Dickey ('43 NYA) · Ernie Lombardi ('42 BSN) · Jack Meyers ('12 NY1) · Smoky Burgess ('54 PHI) · Babe Phelps ('36 BRO) · Joe Mauer ('09 MIN) · Mike Piazza ('97 LAN) · Elston Howard ('61 NYA) · Don Slaught ('92 PIT)
 
-**First base (1B)** — Lou Gehrig ('27 NYA) · Jimmie Foxx ('32 PHA) · Johnny Mize ('46 NY1) · George Sisler ('20 SLA) · Hank Aaron ('71 ATL) · Harry Heilmann ('23 DET) · Dolph Camilli ('41 BRO) · Hank Greenberg ('38 DET) · Dick Allen ('72 CHA) · Willie McCovey ('69 SFN)
+**First base (1B)** — Nap Lajoie ('10 CLE) · Harry Heilmann ('23 DET) · Rod Carew ('77 MIN) · Luis Arraez ('23 MIA) · George Sisler ('20 SLA) · Dale Alexander ('32 BOS) · Tito Francona ('59 CLE) · Andres Galarraga ('93 COL) · Carl Taylor ('69 PIT) · John Olerud ('93 TOR)
 
-**Second base (2B)** — Rogers Hornsby ('25 SLN) · Smoky Joe Wood ('18 CLE) · Nap Lajoie ('10 CLE) · Joe Morgan ('76 CIN) · Bobby Doerr ('44 BOS) · Larry Doyle ('11 NY1) · Russ Wrightstone ('25 PHI) · Marty Kavanagh ('15 DET) · Joe Gordon ('42 NYA) · Eddie Collins ('15 CHA)
+**Second base (2B)** — Nap Lajoie ('10 CLE) · Luis Arraez ('23 MIA) · Jose Iglesias ('24 NYN) · Rogers Hornsby ('25 SLN) · Paul Molitor ('87 ML4) · Jeff McNeil ('22 NYN) · Bobby Avila ('54 CLE) · Eddie Collins ('15 CHA) · Rod Carew ('69 MIN) · DJ LeMahieu ('16 COL)
 
-**Third base (3B)** — Jimmie Foxx ('32 PHA) · Mike Schmidt ('81 PHI) · Rudy York ('37 DET) · Al Rosen ('53 CLE) · George Brett ('80 KCA) · Gary Sheffield ('92 SDN) · Russ Wrightstone ('25 PHI) · Pedro Guerrero ('85 LAN) · Miguel Cabrera ('13 DET) · Bill Robinson ('76 PIT)
+**Third base (3B)** — George Brett ('80 KCA) · Jose Iglesias ('24 NYN) · Miguel Cabrera ('13 DET) · Joe Torre ('71 SLN) · Wade Boggs ('87 BOS) · Chipper Jones ('08 ATL) · Paul Molitor ('87 ML4) · Howie Kendrick ('19 WAS) · Luis Arraez ('19 MIN) · Cecil Travis ('41 WS1)
 
-**Shortstop (SS)** — Arky Vaughan ('35 PIT) · Vern Stephens ('43 SLA) · Russ Wrightstone ('25 PHI) · Troy Tulowitzki ('14 COL) · Hanley Ramirez ('13 LAN) · Rico Petrocelli ('69 BOS) · Howard Johnson ('89 NYN) · Lou Boudreau ('48 CLE) · Jimmy Dykes ('29 PHA) · Eddie Lake ('45 BOS)
+**Shortstop (SS)** — Luke Appling ('36 CHA) · Arky Vaughan ('35 PIT) · Nomar Garciaparra ('00 BOS) · Bobby Witt ('24 KCA) · Troy Tulowitzki ('14 COL) · Lou Boudreau ('48 CLE) · Hanley Ramirez ('13 LAN) · Cecil Travis ('41 WS1) · Alan Trammell ('87 DET) · Corey Seager ('23 TEX)
 
-**Outfield (LF/CF/RF)** — Babe Ruth ('20 NYA) · Ted Williams ('41 BOS) · Ken Williams ('23 SLA) · Cy Williams ('26 PHI) · Tillie Walker ('22 PHA) · Mel Ott ('44 NY1) · Hack Wilson ('30 CHN) · Smoky Joe Wood ('18 CLE) · Ty Cobb ('11 DET) · Goose Goslin ('30 SLA)
+**Outfield (LF/CF/RF)** — Ty Cobb ('11 DET) · Tris Speaker ('16 CLE) · Shoeless Joe Jackson ('11 CLE) · Ted Williams ('41 BOS) · Harry Heilmann ('23 DET) · Tony Gwynn ('94 SDN) · Zack Wheat ('24 BRO) · Sam Crawford ('11 DET) · Tito Francona ('59 CLE) · Harvey Kuenn ('59 DET)
 
-**Designated hitter (DH)** — Aaron Judge ('24 NYA) · Frank Thomas ('94 CHA) · Cecil Fielder ('90 DET) · Jim Thome ('02 CLE) · Champ Summers ('79 DET) · Jason Giambi ('01 OAK) · John Mayberry ('75 KCA) · Manny Ramirez ('02 BOS) · Mike Napoli ('11 TEX) · Josh Hamilton ('10 TEX)
+**Designated hitter (DH)** — Aaron Judge ('24 NYA) · John Olerud ('93 TOR) · Yandy Diaz ('23 TBA) · Magglio Ordonez ('07 DET) · Cecil Cooper ('80 ML4) · Paul Molitor ('87 ML4) · Joe Mauer ('09 MIN) · Darin Erstad ('00 ANA) · Manny Ramirez ('02 BOS) · Josh Hamilton ('10 TEX)
 
-**Starting pitcher (SP)** — Pedro Martinez ('00 BOS) · Clayton Kershaw ('16 LAN) · Greg Maddux ('94 ATL) · Jake Arrieta ('15 CHN) · Cy Blanton ('35 PIT) · Willie Mitchell ('13 CLE) · Zack Greinke ('15 LAN) · Dolf Luque ('23 CIN) · Chris Sale ('18 BOS) · Justin Verlander ('22 HOU)
+**Starting pitcher (SP)** — Pedro Martinez ('00 BOS) · Bob Feller ('39 CLE) · Walter Johnson ('24 WS1) · Jeff Tesreau ('12 NY1) · Willie Mitchell ('13 CLE) · Bob Gibson ('68 SLN) · Ferdie Schupp ('17 NY1) · Stan Coveleski ('17 CLE) · Vean Gregg ('11 CLE) · Sid Fernandez ('85 NYN)
 
-**Relief pitcher (RP)** — Mike Adams ('09 SDN) · Craig Kimbrel ('21 CHN) · Koji Uehara ('13 BOS) · Dennis Eckersley ('90 OAK) · Hung-Chih Kuo ('10 LAN) · Aroldis Chapman ('25 BOS) · Ryan Brasier ('23 LAN) · Joey Devine ('08 OAK) · Sean Doolittle ('18 WAS) · David Robertson ('17 NYA)
+**Relief pitcher (RP)** — Mike Adams ('09 SDN) · Koji Uehara ('13 BOS) · Billy Wagner ('99 HOU) · Craig Kimbrel ('12 ATL) · Dennis Eckersley ('90 OAK) · Norm Charlton ('95 SEA) · Joe Berry ('44 PHA) · Doug Henry ('91 ML4) · Sean Doolittle ('18 WAS) · Rich Gossage ('81 NYA)
 
 ## What the simulation deliberately ignores
 

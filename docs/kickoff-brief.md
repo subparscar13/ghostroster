@@ -37,7 +37,7 @@ Non-goals (PRD): accounts, mobile app, multi-sport, live MLB data, monetization 
 
 **Per-player sim vector (era-adjusted, league-relative):**
 
-- Hitter: per-PA outcome probabilities `{BB, 1B, 2B, 3B, HR, OUT}` (HBP folded into BB; SO/BIP split optional cosmetic). Era adjustment: player rate ÷ league rate that season, applied to a neutral baseline environment.
+- Hitter: per-PA outcome probabilities `{BB, 1B, 2B, 3B, HR, OUT}` (HBP folded into BB; SO/BIP split optional cosmetic). Era adjustment: player rate ÷ league rate that season, applied to a neutral baseline environment. *(Shipped method updated by D-011: a z-score against the era's eligible-regular distribution, not a raw ratio — same neutral-baseline projection.)*
 - Pitcher: allowed-outcome vector in the same shape, from opponents' results (derivable from Lahman pitching lines: BB, H, HR, IP; 2B/3B allowed estimated from league splits). Plus `stamina` display stat.
 - Display block: raw season line (year, team, traditional stats) for the draft UI.
 

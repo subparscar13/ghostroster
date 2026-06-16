@@ -15,11 +15,13 @@ Per-plate-appearance probabilities, summing to 1.0. Used for both hitters
 { "bb": 0.0, "b1": 0.0, "b2": 0.0, "b3": 0.0, "hr": 0.0, "out": 0.0 }
 ```
 
-Era adjustment is league-relative: a player's per-PA rate for each outcome is
-divided by the league rate for that outcome in that season, then applied to a
-neutral baseline environment. (Z-score normalization is the documented fallback
-if league-relative ratios distort 1968-style outlier seasons — flagged tuning
-item, validated in M2's notebook, not implemented blindly.)
+Era adjustment is a **z-score projection** (decision-log **D-011**): a player's
+per-PA rate for each outcome is converted to standard-deviations above his era's
+eligible-regular distribution and nudged onto a neutral baseline,
+`adjusted_o = NEUTRAL_o × (1 + SCALE × z_o)` with `SCALE = 0.33`. This replaced the
+original league-relative *ratio* (the fallback D-003 reserved), which over-amplified
+low-offense eras and made the optimal-roster ceiling trivially perfect; the z-score
+calibration targets a ~30–45% 162-0 ceiling for the best-possible roster.
 
 ## `public/data/teams.json` — spin index
 
@@ -151,7 +153,7 @@ function simulateSeason(roster: Roster, opponent: OpponentModel, seed: number): 
 
 Hitter eligibility ≥80 G + ≥200 PA (tightened to everyday-regular level, excluding
 small-sample cheat-code rates); pitcher eligibility (SP ≥20 GS, RP ≥30 relief) +
-RP usage rule; 2B/3B-allowed league-split estimate; z-score fallback
-for outlier seasons; advancement-table refinements + no-DP/no-SF + no-RP-fatigue
-levers; letter-grade scale; run-environment ±10% / 162-0 top-1–3% / 145–158
-near-miss calibration (SC-004).
+RP usage rule; 2B/3B-allowed league-split estimate; **z-score era projection
+`SCALE` (resolved → 0.33, D-011)**; advancement-table refinements + no-DP/no-SF +
+no-RP-fatigue levers; letter-grade scale; run-environment ±10% / 162-0 top-1–3% /
+145–158 near-miss calibration (SC-004).

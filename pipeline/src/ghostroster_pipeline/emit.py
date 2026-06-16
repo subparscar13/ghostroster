@@ -82,7 +82,7 @@ def _positions(tables: Tables) -> dict[tuple, list[str]]:
     return out
 
 
-def _hitter_obj(row: pd.Series, names, positions, league_hit, allstars, hof) -> dict:
+def _hitter_obj(row: pd.Series, names, positions, dist_hit, allstars, hof) -> dict:
     key = (row["playerID"], int(row["yearID"]), row["teamID"])
     return {
         "playerId": row["playerID"],
@@ -98,11 +98,11 @@ def _hitter_obj(row: pd.Series, names, positions, league_hit, allstars, hof) -> 
             "SO": int(row.get("SO", 0)),
             "AVG": f"{row['AVG']:.3f}", "OPS": f"{row['OPS']:.3f}",
         },
-        "vector": vectors.hitter_vector(row, league_hit),
+        "vector": vectors.hitter_vector(row, dist_hit),
     }
 
 
-def _pitcher_obj(row: pd.Series, names, league_pitch, league_hit, allstars, hof) -> dict:
+def _pitcher_obj(row: pd.Series, names, dist_pitch, league_hit, allstars, hof) -> dict:
     return {
         "playerId": row["playerID"],
         "name": names.get(row["playerID"], row["playerID"]),
@@ -115,7 +115,7 @@ def _pitcher_obj(row: pd.Series, names, league_pitch, league_hit, allstars, hof)
             "G": int(row["G"]), "GS": int(row["GS"]), "IP": round(float(row["IP"]), 1),
             "H": int(row["H"]), "BB": int(row["BB"]), "SO": int(row["SO"]), "HR": int(row["HR"]),
         },
-        "allowed": vectors.pitcher_allowed_vector(row, league_pitch, league_hit),
+        "allowed": vectors.pitcher_allowed_vector(row, dist_pitch, league_hit),
         "stamina": vectors.stamina(row),
     }
 
@@ -138,8 +138,9 @@ def build(
     """Write teams.json + td chunks. Returns a summary dict (counts, dropped cells)."""
     names = _name_map(tables)
     positions = _positions(tables)
-    league_hit = vectors.league_hitter_rates(tables)
-    league_pitch = vectors.league_pitcher_rates(tables)
+    league_hit = vectors.league_hitter_rates(tables)  # pitcher hit-type split only
+    dist_hit = vectors.league_hitter_dist(tables)
+    dist_pitch = vectors.league_pitcher_dist(tables)
     era_names = _era_names(tables)
     allstars = _allstar_seasons(tables)
     hof = _hof_players(tables)
@@ -177,10 +178,10 @@ def build(
 
         chunk = {
             "franchiseId": franch, "franchise": franch_name, "decade": int(decade),
-            "hitters": [_hitter_obj(r, names, positions, league_hit, allstars, hof) for _, r in hb.iterrows()],
+            "hitters": [_hitter_obj(r, names, positions, dist_hit, allstars, hof) for _, r in hb.iterrows()],
             "pitchers": (
-                [_pitcher_obj(r, names, league_pitch, league_hit, allstars, hof) for _, r in sp.iterrows()]
-                + [_pitcher_obj(r, names, league_pitch, league_hit, allstars, hof) for _, r in rp.iterrows()]
+                [_pitcher_obj(r, names, dist_pitch, league_hit, allstars, hof) for _, r in sp.iterrows()]
+                + [_pitcher_obj(r, names, dist_pitch, league_hit, allstars, hof) for _, r in rp.iterrows()]
             ),
         }
         _dump(out_dir / "td" / f"{franch}-{int(decade)}.json", chunk)
