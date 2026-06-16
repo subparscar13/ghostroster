@@ -1,8 +1,11 @@
 /**
  * Result-screen text + season stats. The **satirical attributed quote** (T071 /
- * D-009) is fabricated parody "in the style of" iconic, long-deceased baseball
- * figures reacting to the (obviously fictional) all-eras roster — writerly-dry,
- * praise for great seasons, a sharper deadpan sting for bad ones, never defamatory.
+ * D-009, broadcaster voices added in T078) is fabricated parody "in the style of"
+ * iconic baseball figures — writers (Lardner, Rice), broadcasters (Scully, Jack
+ * Buck, Harry Caray, Bob Uecker, Red Barber, Mel Allen), and players/managers
+ * (Ruth, Dean, Paige, Stengel) — reacting to the (obviously fictional) all-eras
+ * roster. Praise for great seasons, a sharper deadpan sting for bad ones; each
+ * voice keeps its register; never defamatory (always aimed at the team/season).
  *
  * Both the headline feat and the quote draw from a SPREAD of season stats (not just
  * the win streak), chosen deterministically so a given run is stable (T076).
@@ -100,62 +103,74 @@ type Quote = { line: (c: Ctx) => string; author: string };
 
 const PERFECT: Quote[] = [
   { line: () => "Perfection is boring to watch and a nightmare to write. You did it anyway.", author: "Ring Lardner" },
+  { line: () => "In a sport built on failure, a whole season without it. Pull up a chair — you may never see this again.", author: "Vin Scully" },
+  { line: () => "162 and 0. I don't believe what I just saw, and I watched every inning of it.", author: "Jack Buck" },
+  { line: () => "A perfect season — holy cow. And not one of these fellas still around to buy a round.", author: "Harry Caray" },
   { line: () => "A flawless season assembled from men who never shared a clubhouse, a century, or a handshake. Tidy.", author: "Red Barber" },
+  { line: () => "Perfect, they tell me. I went a whole season without a perfect anything. Different skill set.", author: "Bob Uecker" },
   { line: () => "162 and 0. I've made outs that took longer than your whole losing column.", author: "Babe Ruth" },
-  { line: () => "They keep saying nobody's perfect. This lot went and embarrassed the saying.", author: "Dizzy Dean" },
-  { line: () => "A perfect record, and not one of these men alive to enjoy it. Baseball's funny that way.", author: "Grantland Rice" },
   { line: () => "162-0. Even the ghosts started looking over their shoulders.", author: "Satchel Paige" },
 ];
 
 const NEAR_MISS: Quote[] = [
+  { line: (c) => `${c.l} small clouds in an otherwise blue season — the pulse of this game is failure, and they felt it only ${c.l} times.`, author: "Vin Scully" },
+  { line: (c) => `${c.l} losses. That's a winner, folks — just not a perfect one.`, author: "Jack Buck" },
+  { line: (c) => `${c.l} losses shy of perfect. In my day that was a career year.`, author: "Bob Uecker" },
   { line: (c) => `${c.l} losses. Give it a hundred years and the record books will round them down.`, author: "Grantland Rice" },
-  { line: (c) => `${c.l} games got away. The other ${c.w} didn't have the nerve.`, author: "Mel Allen" },
   { line: (c) => `So close to perfect you can hear it — ${c.l} blemishes on a season that didn't deserve them.`, author: "Red Barber" },
-  { line: (c) => `Lost ${c.l}, and somewhere a scorekeeper is still apologizing.`, author: "Ring Lardner" },
+  { line: (c) => `${c.l} games got away. The other ${c.w} didn't have the nerve.`, author: "Mel Allen" },
 ];
 
 const RECORD: Quote[] = [
+  { line: (c) => `${c.w} and ${c.l} — a pleasant afternoon's work, the kind you've forgotten by the drive home.`, author: "Vin Scully" },
+  { line: (c) => `${c.w} and ${c.l}. Good seats still available to watch a team this gloriously average.`, author: "Bob Uecker" },
+  { line: (c) => `${c.w} and ${c.l}. A winner, sure. We'll leave the fireworks in the box for now.`, author: "Jack Buck" },
+  { line: (c) => `${c.w} wins — holy cow. Well, holy small cow. We'll take it.`, author: "Harry Caray" },
   { line: (c) => `${c.w} and ${c.l}. Good enough to brag about, not good enough to remember.`, author: "Red Barber" },
   { line: (c) => `${c.w} wins. Respectable. Forgettable. File it under "pretty good."`, author: "Grantland Rice" },
-  { line: (c) => `${c.w} and ${c.l} — above water, below legend, the honest middle.`, author: "Grantland Rice" },
   { line: (c) => `A ${c.w}-win year carried by ${c.top}; a trivia answer by August.`, author: "Ring Lardner" },
-  { line: () => "A winning record stitched from strangers across the eras. Pleasant enough.", author: "Red Barber" },
 ];
 
 const STREAK: Quote[] = [
+  { line: (c) => `${c.longestWinStreak} in a row. In a quiet way, the rest of the league simply ran out of arguments.`, author: "Vin Scully" },
+  { line: (c) => `${c.longestWinStreak} straight — holy cow, you could've batted the order backwards and still won.`, author: "Harry Caray" },
+  { line: (c) => `${c.longestWinStreak} in a row, and somewhere in the middle of it I stopped believing what I saw.`, author: "Jack Buck" },
   { line: (c) => `${c.longestWinStreak} straight. Around game thirty the other dugouts started booking dentist appointments.`, author: "Mel Allen" },
-  { line: (c) => `A ${c.longestWinStreak}-game winning streak. I've seen weather systems with less momentum.`, author: "Harry Caray" },
-  { line: (c) => `Won ${c.longestWinStreak} in a row, at which point the schedule stopped being a contest.`, author: "Grantland Rice" },
 ];
 
 const NO_HITTERS: Quote[] = [
   { line: (c) => `${c.noHitters} no-hitters. The opposing bats have been listed as missing.`, author: "Red Barber" },
+  { line: (c) => `${c.noHitters} no-hitters. I went hitless plenty — never on purpose, mind you.`, author: "Bob Uecker" },
+  { line: (c) => `${c.noHitters} times the other side went home without a hit, and without a word.`, author: "Vin Scully" },
   { line: (c) => `${c.noHitters} games without surrendering a hit. Somebody call their families.`, author: "Dizzy Dean" },
-  { line: (c) => `${c.noHitters} no-hitters against men dead for decades. Twice the indignity.`, author: "Ring Lardner" },
 ];
 
 const SLUGGING: Quote[] = [
+  { line: (c) => `${c.teamHR} home runs — holy cow, somebody warn the bleachers and the neighborhood behind them.`, author: "Harry Caray" },
+  { line: (c) => `${c.runsFor} runs. Go crazy, folks — the arithmetic certainly did.`, author: "Jack Buck" },
   { line: (c) => `${c.teamHR} home runs. The groundskeepers filed for hazard pay.`, author: "Mel Allen" },
-  { line: (c) => `${c.runsFor} runs scored. Arithmetic stopped being relevant around June.`, author: "Grantland Rice" },
   { line: (c) => `${c.teamHR} long balls from men who never met. Physics took the year off.`, author: "Ring Lardner" },
 ];
 
 const PITCHING: Quote[] = [
+  { line: (c) => `${c.shutouts} nights the scoreboard never blinked. Pitching, it's been said, is the art of the unkind.`, author: "Vin Scully" },
+  { line: (c) => `${c.runsAgainst} runs allowed all year. Even I could've gotten into a few of those games — front row, mind you.`, author: "Bob Uecker" },
   { line: (c) => `${c.shutouts} shutouts. The other dugout brought bats out of habit, not hope.`, author: "Red Barber" },
   { line: (c) => `${c.runsAgainst} runs allowed all year. Stingy doesn't begin to cover it.`, author: "Mel Allen" },
-  { line: (c) => `${c.shutouts} times the opposition went home with nothing. Cruel and efficient.`, author: "Ring Lardner" },
 ];
 
 const BLOWOUT: Quote[] = [
+  { line: (c) => `They won ${c.biggestWin}. Go crazy if you like — the scoreboard already did.`, author: "Jack Buck" },
+  { line: (c) => `A ${c.biggestWin} final in there somewhere — holy cow, the mercy rule was written for days like it.`, author: "Harry Caray" },
   { line: (c) => `One afternoon they won ${c.biggestWin}. It stopped being baseball and became a lesson.`, author: "Grantland Rice" },
-  { line: (c) => `A ${c.biggestWin} final in there somewhere — the mercy rule was written for days like it.`, author: "Harry Caray" },
 ];
 
 const POOR: Quote[] = [
+  { line: (c) => `${c.l} losses. I caught for some bad clubs. This one would've fit right in.`, author: "Bob Uecker" },
+  { line: (c) => `${c.w} and ${c.l} — holy cow, and not the good kind of holy cow.`, author: "Harry Caray" },
   { line: (c) => `A lineup of immortals that lost ${c.l} times. Even the ghosts left early.`, author: "Ring Lardner" },
-  { line: (c) => `${c.w} and ${c.l}. Eighty years of talent, and somehow none of it showed up.`, author: "Grantland Rice" },
-  { line: () => "It takes genuine coordination across the decades to be this bad. Almost admirable.", author: "Ring Lardner" },
   { line: (c) => `${c.l} losses. I've run clubs that quit earlier and embarrassed me less.`, author: "Casey Stengel" },
+  { line: (c) => `${c.w} and ${c.l}. Eighty years of talent, and somehow none of it showed up.`, author: "Grantland Rice" },
   { line: (c) => `${c.top} did what he could. The other twelve treated the season as optional.`, author: "Mel Allen" },
 ];
 
@@ -175,12 +190,14 @@ export function quip(result: SeasonResult, picks: DraftPick[]): { quote: string;
   if (c.w < 70) return choose(POOR, c, "poor");
 
   // Middle: RECORD is always eligible; add flavor pools for whatever stands out.
+  // Thresholds kept modest so a typical season usually surfaces at least one flavor
+  // pool — that keeps the attributed voices varied rather than leaning on RECORD.
   const pools: [string, Quote[]][] = [["record", RECORD]];
   if (c.noHitters >= 1) pools.push(["nohit", NO_HITTERS]);
-  if (c.longestWinStreak >= 18) pools.push(["streak", STREAK]);
-  if (c.teamHR >= 200) pools.push(["slug", SLUGGING]);
-  if (c.shutouts >= 15) pools.push(["pitch", PITCHING]);
-  if (c.biggestWinDiff >= 14) pools.push(["blow", BLOWOUT]);
+  if (c.longestWinStreak >= 15) pools.push(["streak", STREAK]);
+  if (c.teamHR >= 185) pools.push(["slug", SLUGGING]);
+  if (c.shutouts >= 12) pools.push(["pitch", PITCHING]);
+  if (c.biggestWinDiff >= 12) pools.push(["blow", BLOWOUT]);
 
   const [salt, pool] = pools[hashSeed(`${c.w}-${c.l}|pool`) % pools.length]!;
   return choose(pool, c, salt);

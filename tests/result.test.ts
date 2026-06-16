@@ -59,6 +59,18 @@ describe("quip", () => {
   it("varies across very different seasons", () => {
     expect(quip(mk(162, 0), []).quote).not.toBe(quip(mk(60, 102), []).quote);
   });
+  it("attributes to a diverse set of voices, no single author dominating", () => {
+    const authors: string[] = [];
+    for (let l = 0; l <= 100; l++) authors.push(quip(mk(162 - l, l), []).author);
+    const counts = new Map<string, number>();
+    for (const a of authors) counts.set(a, (counts.get(a) ?? 0) + 1);
+    // The four broadcaster voices the result screen should surface across the range.
+    for (const v of ["Vin Scully", "Jack Buck", "Harry Caray", "Bob Uecker"]) {
+      expect(authors).toContain(v);
+    }
+    expect(counts.size).toBeGreaterThanOrEqual(6);
+    expect(Math.max(...counts.values()) / authors.length).toBeLessThan(0.5);
+  });
   it("resolves the top performer's drafted name", () => {
     const picks = [{ slot: "RF" as const, playerId: "ruth", name: "Babe Ruth", kind: "hitter" as const, tag: "'27 NYY" }];
     expect(topPerformerName(mk(162, 0), picks)).toBe("Babe Ruth");
