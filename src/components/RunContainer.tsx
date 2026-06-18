@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { loadChunk, loadTeamsIndex } from "@/lib/data";
 import { dailyDateKey, dailyNumber, dailyRng, dailySeed, dailyShareText, spoilerSquares } from "@/lib/daily";
+import { dailyThemeName, eligibleCells } from "@/lib/divisions";
 import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
 import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam, REROLLS_PER_RUN } from "@/lib/spin";
 import { clearRun, loadRun, saveDailyResult, saveRun } from "@/lib/storage";
@@ -47,6 +48,13 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     [mode],
   );
 
+  // The spinnable pool: the full index for classic, the day's division/All-Star subset
+  // for the daily (D-015). Re-rolls and respins all draw from this.
+  const pool = useMemo<SpinCell[]>(
+    () => (!index ? [] : mode === "daily" && dateKey ? eligibleCells(index.cells, dateKey) : index.cells),
+    [index, mode, dateKey],
+  );
+
   const spinTo = useCallback((target: SpinCell) => {
     setCell(target);
     setChunk(null);
@@ -72,8 +80,9 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
           setRerollsUsed(saved.rerollsUsed);
         }
         setSeed(mode === "daily" ? dailySeed(dk) : (saved?.seed ?? null));
+        const cells0 = mode === "daily" && dk ? eligibleCells(idx.cells, dk) : idx.cells;
         if (isComplete(startPicks)) setPhase("result");
-        else spinTo(randomCell(idx, rngForKey(dk, `spin:${startPicks.length + 1}`)));
+        else spinTo(randomCell(cells0, rngForKey(dk, `spin:${startPicks.length + 1}`)));
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [mode, spinTo, rngForKey]);
@@ -114,7 +123,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
       setPhase("simulate");
     } else {
       persist(next, rerollsUsed, seed);
-      if (index) spinTo(randomCell(index, rngForKey(dateKey, `spin:${next.length + 1}`)));
+      if (pool.length) spinTo(randomCell(pool, rngForKey(dateKey, `spin:${next.length + 1}`)));
     }
   };
 
@@ -134,17 +143,17 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     spinTo(next);
   };
   const onRerollTeam = () => {
-    if (!index || !cell || rerollsUsed.team >= REROLLS_PER_RUN || !canRerollTeam(index, cell)) return;
+    if (!cell || rerollsUsed.team >= REROLLS_PER_RUN || !canRerollTeam(pool, cell)) return;
     // Index the daily key per re-roll so the two re-rolls are distinct + reproducible.
-    consumeAndSpin("team", rerollTeam(index, cell, rngForKey(dateKey, `team:${round}:${rerollsUsed.team + 1}`)));
+    consumeAndSpin("team", rerollTeam(pool, cell, rngForKey(dateKey, `team:${round}:${rerollsUsed.team + 1}`)));
   };
   const onRerollEra = () => {
-    if (!index || !cell || rerollsUsed.era >= REROLLS_PER_RUN || !canRerollEra(index, cell)) return;
-    consumeAndSpin("era", rerollEra(index, cell, rngForKey(dateKey, `era:${round}:${rerollsUsed.era + 1}`)));
+    if (!cell || rerollsUsed.era >= REROLLS_PER_RUN || !canRerollEra(pool, cell)) return;
+    consumeAndSpin("era", rerollEra(pool, cell, rngForKey(dateKey, `era:${round}:${rerollsUsed.era + 1}`)));
   };
   const onRespin = () => {
-    if (!index) return;
-    spinTo(randomCell(index, rngForKey(dateKey, `respin:${round}:${respins}`)));
+    if (!pool.length) return;
+    spinTo(randomCell(pool, rngForKey(dateKey, `respin:${round}:${respins}`)));
     setRespins((r) => r + 1);
   };
 
@@ -154,7 +163,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     setRerollsUsed({ team: 0, era: 0 });
     setRespins(0);
     setSeed(mode === "daily" ? dailySeed(dateKey) : null);
-    if (index) spinTo(randomCell(index, rngForKey(dateKey, `spin:1`)));
+    if (pool.length) spinTo(randomCell(pool, rngForKey(dateKey, `spin:1`)));
   };
 
   const view = renderView();
@@ -162,7 +171,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     <>
       {mode === "daily" && dateKey && (
         <p className="pt-4 text-center font-mono text-[11px] uppercase tracking-[0.3em] text-vintage">
-          Daily · Ghost Roster #{dailyNumber(dateKey)}
+          Daily #{dailyNumber(dateKey)} · {dailyThemeName(dateKey)}
         </p>
       )}
       {view}
@@ -216,8 +225,8 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
         picks={picks}
         round={round}
         rerollsUsed={rerollsUsed}
-        canRerollTeam={cell ? canRerollTeam(index, cell) : false}
-        canRerollEra={cell ? canRerollEra(index, cell) : false}
+        canRerollTeam={cell ? canRerollTeam(pool, cell) : false}
+        canRerollEra={cell ? canRerollEra(pool, cell) : false}
         onRerollTeam={onRerollTeam}
         onRerollEra={onRerollEra}
         onRespin={onRespin}

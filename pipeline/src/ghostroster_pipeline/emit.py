@@ -120,6 +120,23 @@ def _pitcher_obj(row: pd.Series, names, dist_pitch, league_hit, allstars, hof) -
     }
 
 
+_VAL_W = {"bb": 0.69, "b1": 0.89, "b2": 1.27, "b3": 1.62, "hr": 2.10}
+
+
+def _vec_value(v: dict) -> float:
+    return sum(_VAL_W[k] * v[k] for k in _VAL_W)
+
+
+def _cell_strength(chunk: dict) -> float:
+    """Rough roster strength: top-9 hitter value minus the best 3 SP + 1 RP allowed
+    value (lower allowed = better). Used only to pick each franchise's marquee decade
+    for the daily Sunday All-Star pool (D-015)."""
+    hv = sorted((_vec_value(h["vector"]) for h in chunk["hitters"]), reverse=True)[:9]
+    sp = sorted(_vec_value(p["allowed"]) for p in chunk["pitchers"] if p["role"] == "SP")[:3]
+    rp = sorted(_vec_value(p["allowed"]) for p in chunk["pitchers"] if p["role"] == "RP")[:1]
+    return sum(hv) - sum(sp) - sum(rp)
+
+
 def _dump(path: Path, obj: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -189,9 +206,22 @@ def build(
             "franchiseId": franch, "franchise": franch_name, "decade": int(decade),
             "chunk": f"td/{franch}-{int(decade)}.json",
             "counts": {"hitters": len(hb), "sp": len(sp), "rp": len(rp)},
+            "_strength": _cell_strength(chunk),
         })
 
     cells.sort(key=lambda c: (c["franchiseId"], c["decade"]))
+    # Mark each franchise's strongest decade for the daily Sunday All-Star pool (D-015);
+    # ties break to the earliest decade (cells are sorted, so first-seen wins on >).
+    best_val: dict[str, float] = {}
+    best_dec: dict[str, int] = {}
+    for c in cells:
+        f = c["franchiseId"]
+        if f not in best_val or c["_strength"] > best_val[f]:
+            best_val[f] = c["_strength"]
+            best_dec[f] = c["decade"]
+    for c in cells:
+        c["allStar"] = best_dec[c["franchiseId"]] == c["decade"]
+        del c["_strength"]
     _dump(out_dir / "teams.json", {
         "edition": edition, "generatedFrom": "Lahman Database", "cells": cells,
     })

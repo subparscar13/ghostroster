@@ -9,6 +9,7 @@ export type SpinCell = {
   decade: number;
   chunk: string;
   counts: { hitters: number; sp: number; rp: number };
+  allStar?: boolean; // franchise's strongest decade — the Sunday All-Star pool (D-015)
 };
 
 /** `teams.json` — the spin index. */

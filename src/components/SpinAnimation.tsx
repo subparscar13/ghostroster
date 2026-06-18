@@ -42,7 +42,7 @@ export function SpinAnimation({ index, target, round, onDone }: Props) {
         timer.current = setTimeout(onDone, HOLD_MS);
         return;
       }
-      setCell(randomCell(index, Math.random));
+      setCell(randomCell(index.cells, Math.random));
       timer.current = setTimeout(tick, FLICKER_MS);
     };
     tick();
