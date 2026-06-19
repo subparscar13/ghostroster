@@ -99,7 +99,7 @@ export function LeaderboardView() {
               <thead>
                 <tr className="border-b border-faded text-[10px] uppercase tracking-wider text-ink-faint">
                   <th className="py-1 text-left font-normal">#</th>
-                  <th className="py-1 text-left font-normal">Init</th>
+                  <th className="py-1 text-left font-normal">Name</th>
                   <th className="py-1 text-right font-normal">Record</th>
                   <th className="py-1 text-right font-normal">{scope === "alltime" ? "162-0" : "Grade"}</th>
                 </tr>
@@ -108,7 +108,7 @@ export function LeaderboardView() {
                 {rows.map((r) => (
                   <tr key={`${r.rank}-${r.initials}-${r.dateKey ?? ""}`} className="border-b border-faded/30">
                     <td className="py-1.5 tabular-nums text-ink-faint">{r.rank}</td>
-                    <td className="py-1.5 tracking-[0.2em] text-ink">{r.initials}</td>
+                    <td className="max-w-[8rem] truncate py-1.5 pr-2 text-ink">{r.initials}</td>
                     <td className="py-1.5 text-right tabular-nums text-vintage">{r.wins}–{r.losses}</td>
                     <td className="py-1.5 text-right tabular-nums text-gold-ink">
                       {scope === "alltime" ? (r.perfectCount ?? 0) : r.grade}

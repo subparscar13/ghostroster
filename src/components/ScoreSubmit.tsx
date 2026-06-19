@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { type BoardMode, buildSubmission, leaderboardEnabled, loadInitials, saveInitials, submitScore, validateInitials } from "@/lib/leaderboard";
+import { type BoardMode, buildSubmission, leaderboardEnabled, loadInitials, saveInitials, submitScore, validateName } from "@/lib/leaderboard";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
 
@@ -22,7 +22,7 @@ function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKe
   const label = mode === "daily" ? "today’s leaderboard" : "the all-time board";
 
   const submit = async () => {
-    const valid = validateInitials(initials);
+    const valid = validateName(initials);
     if (!valid) {
       setStatus("invalid");
       return;
@@ -37,7 +37,7 @@ function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKe
       <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Post to {label}</p>
       {status === "posted" ? (
         <p className="mt-2 font-mono text-sm text-navy">
-          Posted as {validateInitials(initials)} —{" "}
+          Posted as {validateName(initials)} —{" "}
           <Link href="/leaderboard" className="underline underline-offset-4 hover:text-ink">view board →</Link>
         </p>
       ) : (
@@ -46,13 +46,13 @@ function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKe
             <input
               value={initials}
               onChange={(e) => {
-                setInitials(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3));
+                setInitials(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10));
                 if (status !== "idle") setStatus("idle");
               }}
-              placeholder="AAA"
-              maxLength={3}
-              aria-label="Your initials"
-              className="w-20 rounded-md border-2 border-faded bg-paper px-3 py-2 text-center font-mono text-lg uppercase tracking-[0.3em] text-ink focus:border-gold focus:outline-none"
+              placeholder="NAME"
+              maxLength={10}
+              aria-label="Your name"
+              className="w-44 rounded-md border-2 border-faded bg-paper px-3 py-2 text-center font-mono text-base uppercase tracking-[0.15em] text-ink focus:border-gold focus:outline-none"
             />
             <button
               onClick={submit}
@@ -62,7 +62,7 @@ function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKe
               {status === "sending" ? "Posting…" : "Post score"}
             </button>
           </div>
-          {status === "invalid" && <p className="mt-2 font-mono text-xs text-vintage">Enter three letters.</p>}
+          {status === "invalid" && <p className="mt-2 font-mono text-xs text-vintage">Enter 1–10 letters or numbers.</p>}
           {status === "error" && <p className="mt-2 font-mono text-xs text-vintage">Couldn&rsquo;t post — try again.</p>}
           <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ink-faint">
             <Link href="/leaderboard" className="underline underline-offset-2 hover:text-ink">view leaderboard →</Link>

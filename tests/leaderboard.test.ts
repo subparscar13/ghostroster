@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSubmission, validateInitials } from "../src/lib/leaderboard";
+import { buildSubmission, validateName } from "../src/lib/leaderboard";
 import type { DraftPick } from "../src/lib/types";
 import type { GameLog, SeasonResult } from "../src/sim/types";
 
@@ -20,13 +20,16 @@ const result: SeasonResult = {
   gameLogs: [glog(1, 7, 2), glog(2, 3, 5)],
 };
 
-describe("validateInitials", () => {
-  it("accepts exactly three letters, upper-casing", () => {
-    expect(validateInitials("abc")).toBe("ABC");
-    expect(validateInitials(" Jd k ".trim().length === 3 ? "jdk" : "jdk")).toBe("JDK");
+describe("validateName", () => {
+  it("accepts 1–10 letters/digits, upper-casing", () => {
+    expect(validateName("abc")).toBe("ABC");
+    expect(validateName("justin")).toBe("JUSTIN");
+    expect(validateName("BigPapi34")).toBe("BIGPAPI34");
+    expect(validateName("A")).toBe("A");
+    expect(validateName("ABCDEFGHIJ")).toBe("ABCDEFGHIJ"); // exactly 10
   });
-  it("rejects anything that isn't three letters", () => {
-    for (const bad of ["", "AB", "ABCD", "A1C", "a c", "  "]) expect(validateInitials(bad)).toBeNull();
+  it("rejects empty, too long, or non-alphanumeric", () => {
+    for (const bad of ["", "ABCDEFGHIJK", "a c", "JD!", "  "]) expect(validateName(bad)).toBeNull();
   });
 });
 

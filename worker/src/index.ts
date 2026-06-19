@@ -39,7 +39,7 @@ const json = (data: unknown, status: number, origin: string) =>
   new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...cors(origin) } });
 
 const isDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
-const isInitials = (s: unknown): s is string => typeof s === "string" && /^[A-Z]{3}$/.test(s);
+const isName = (s: unknown): s is string => typeof s === "string" && /^[A-Z0-9]{1,10}$/.test(s);
 const intIn = (v: unknown, lo: number, hi: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi;
 const shortStr = (v: unknown, n: number): v is string => typeof v === "string" && v.length <= n;
 
@@ -131,7 +131,7 @@ export default {
       }
       const mode = b.mode === "classic" ? "classic" : "daily";
       if (
-        !isInitials(b.initials) || !isDate(b.dateKey) || !shortStr(b.deviceId, 64) || !b.deviceId ||
+        !isName(b.initials) || !isDate(b.dateKey) || !shortStr(b.deviceId, 64) || !b.deviceId ||
         !intIn(b.wins, 0, 162) || !intIn(b.losses, 0, 162) || typeof b.runDiff !== "number" ||
         !shortStr(b.grade, 3) || !shortStr(b.division ?? "", 24) || !shortStr(b.squares ?? "", 64) ||
         (mode === "classic" && !intIn(b.seed, 0, 0xffffffff))

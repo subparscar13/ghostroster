@@ -55,10 +55,10 @@ export function saveInitials(initials: string): void {
   }
 }
 
-/** Exactly three letters → uppercased; otherwise null (the arcade rule). */
-export function validateInitials(raw: string): string | null {
+/** 1–10 letters/digits → uppercased; otherwise null. */
+export function validateName(raw: string): string | null {
   const s = raw.trim().toUpperCase();
-  return /^[A-Z]{3}$/.test(s) ? s : null;
+  return /^[A-Z0-9]{1,10}$/.test(s) ? s : null;
 }
 
 export type BoardMode = "daily" | "classic";
