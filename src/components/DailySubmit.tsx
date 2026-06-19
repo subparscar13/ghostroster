@@ -4,16 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { buildSubmission, leaderboardEnabled, loadInitials, saveInitials, submitScore, validateInitials } from "@/lib/leaderboard";
+import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
 
 /** Arcade 3-initials entry on the daily result (D-012). Renders nothing until the
- * leaderboard endpoint is configured. We trust the score — only the record is posted. */
-export function DailySubmit({ dateKey, result }: { dateKey: string; result: SeasonResult }) {
+ * leaderboard endpoint is configured. The roster (ids only) rides along so the Worker
+ * can re-verify high claims. */
+export function DailySubmit({ dateKey, result, picks }: { dateKey: string; result: SeasonResult; picks: DraftPick[] }) {
   if (!leaderboardEnabled()) return null;
-  return <Inner dateKey={dateKey} result={result} />;
+  return <Inner dateKey={dateKey} result={result} picks={picks} />;
 }
 
-function Inner({ dateKey, result }: { dateKey: string; result: SeasonResult }) {
+function Inner({ dateKey, result, picks }: { dateKey: string; result: SeasonResult; picks: DraftPick[] }) {
   const [initials, setInitials] = useState(loadInitials());
   const [status, setStatus] = useState<"idle" | "sending" | "posted" | "error" | "invalid">("idle");
 
@@ -25,7 +27,7 @@ function Inner({ dateKey, result }: { dateKey: string; result: SeasonResult }) {
     }
     saveInitials(valid);
     setStatus("sending");
-    setStatus((await submitScore(buildSubmission(dateKey, valid, result))) === "ok" ? "posted" : "error");
+    setStatus((await submitScore(buildSubmission(dateKey, valid, result, picks))) === "ok" ? "posted" : "error");
   };
 
   return (

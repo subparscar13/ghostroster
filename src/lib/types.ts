@@ -95,6 +95,7 @@ export type DraftPick = {
   name: string;
   kind: "hitter" | "sp" | "rp";
   tag: string; // e.g. "1961 LAA"
+  chunk?: string; // source data chunk (e.g. "td/NYY-1990.json") — lets the leaderboard re-verify (D-012)
   hitter?: PoolHitter;
   pitcher?: PoolPitcher;
 };

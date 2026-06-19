@@ -14,6 +14,7 @@ import type { SeasonResult } from "@/sim/types";
 import { spoilerSquares } from "./daily";
 import { dailyThemeName } from "./divisions";
 import { seasonStats } from "./result";
+import type { DraftPick } from "./types";
 
 export const LEADERBOARD_ENDPOINT = process.env.NEXT_PUBLIC_LEADERBOARD_ENDPOINT;
 export const leaderboardEnabled = (): boolean => Boolean(LEADERBOARD_ENDPOINT);
@@ -60,6 +61,10 @@ export function validateInitials(raw: string): string | null {
   return /^[A-Z]{3}$/.test(s) ? s : null;
 }
 
+/** A pick reduced to what the server needs to re-verify: who, where they slot, and the
+ * authoritative data chunk to pull their real vector from (never the vector itself). */
+export type SubmissionPick = { playerId: string; slot: string; chunk: string };
+
 export type Submission = {
   dateKey: string;
   initials: string;
@@ -70,10 +75,13 @@ export type Submission = {
   grade: string;
   squares: string;
   division: string;
+  picks: SubmissionPick[];
 };
 
-/** The POST body for a daily result. No roster — we trust the score. */
-export function buildSubmission(dateKey: string, initials: string, result: SeasonResult): Submission {
+/** The POST body for a daily result. Includes the roster as `(playerId, slot, chunk)` so
+ * the Worker can rebuild it from authoritative data and re-simulate to verify high claims
+ * (D-012) — no vectors are sent, so a tampered roster can't pass. */
+export function buildSubmission(dateKey: string, initials: string, result: SeasonResult, picks: DraftPick[]): Submission {
   const s = seasonStats(result);
   return {
     dateKey,
@@ -85,6 +93,7 @@ export function buildSubmission(dateKey: string, initials: string, result: Seaso
     grade: result.grade,
     squares: spoilerSquares(result),
     division: dailyThemeName(dateKey),
+    picks: picks.map((p) => ({ playerId: p.playerId, slot: p.slot, chunk: p.chunk ?? "" })),
   };
 }
 

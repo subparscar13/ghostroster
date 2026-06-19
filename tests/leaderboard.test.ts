@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildSubmission, validateInitials } from "../src/lib/leaderboard";
+import type { DraftPick } from "../src/lib/types";
 import type { GameLog, SeasonResult } from "../src/sim/types";
 
 const glog = (g: number, home: number, away: number): GameLog => ({
@@ -30,7 +31,11 @@ describe("validateInitials", () => {
 });
 
 describe("buildSubmission", () => {
-  const sub = buildSubmission("2026-06-17", "ABC", result); // Wednesday → NL Central
+  const picks = [
+    { slot: "C", playerId: "h1", name: "H1", kind: "hitter", tag: "", chunk: "td/NYY-1990.json" },
+    { slot: "SP1", playerId: "p1", name: "P1", kind: "sp", tag: "", chunk: "td/BOS-2000.json" },
+  ] as DraftPick[];
+  const sub = buildSubmission("2026-06-17", "ABC", result, picks); // Wednesday → NL Central
 
   it("carries the record, grade, and the day's division", () => {
     expect(sub).toMatchObject({ dateKey: "2026-06-17", initials: "ABC", wins: 150, losses: 12, grade: "A", division: "NL Central" });
@@ -38,9 +43,12 @@ describe("buildSubmission", () => {
   it("computes run differential from the logs", () => {
     expect(sub.runDiff).toBe(7 + 3 - (2 + 5)); // runsFor − runsAgainst = 3
   });
-  it("includes spoiler squares and no roster", () => {
+  it("sends the roster as (playerId, slot, chunk) only — no vectors", () => {
+    expect(sub.picks).toEqual([
+      { playerId: "h1", slot: "C", chunk: "td/NYY-1990.json" },
+      { playerId: "p1", slot: "SP1", chunk: "td/BOS-2000.json" },
+    ]);
     expect(typeof sub.squares).toBe("string");
-    expect(sub).not.toHaveProperty("picks");
-    expect(sub.deviceId).toBe(""); // SSR/node: no window, so empty (a real browser fills it)
+    expect(sub.deviceId).toBe(""); // SSR/node: no window (a real browser fills it)
   });
 });

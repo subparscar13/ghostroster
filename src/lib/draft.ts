@@ -60,20 +60,20 @@ export const isComplete = (picks: DraftPick[]) => picks.length === ALL_SLOTS.len
 
 /** Make a pick: returns the new picks array, or null if the player can't be slotted
  * (their category is full, or they're already drafted). */
-export function draftHitter(h: PoolHitter, tag: string, picks: DraftPick[], slot?: Slot): DraftPick[] | null {
+export function draftHitter(h: PoolHitter, tag: string, picks: DraftPick[], slot?: Slot, chunk?: string): DraftPick[] | null {
   if (picks.some((p) => p.playerId === h.playerId)) return null;
   // Honor an explicit, eligible, open slot (from the picker); else auto-slot.
   const chosen = slot && hitterEligible(slot, h.pos) && !isFilled(picks, slot) ? slot : autoSlotHitter(h.pos, picks);
   if (!chosen) return null;
-  return [...picks, { slot: chosen, playerId: h.playerId, name: h.name, kind: "hitter", tag, hitter: h }];
+  return [...picks, { slot: chosen, playerId: h.playerId, name: h.name, kind: "hitter", tag, ...(chunk ? { chunk } : {}), hitter: h }];
 }
 
-export function draftPitcher(p: PoolPitcher, tag: string, picks: DraftPick[]): DraftPick[] | null {
+export function draftPitcher(p: PoolPitcher, tag: string, picks: DraftPick[], chunk?: string): DraftPick[] | null {
   if (picks.some((x) => x.playerId === p.playerId)) return null;
   const slot = autoSlotPitcher(p.role, picks);
   if (!slot) return null;
   const kind = p.role === "SP" ? "sp" : "rp";
-  return [...picks, { slot, playerId: p.playerId, name: p.name, kind, tag, pitcher: p }];
+  return [...picks, { slot, playerId: p.playerId, name: p.name, kind, tag, ...(chunk ? { chunk } : {}), pitcher: p }];
 }
 
 const bySlot = (picks: DraftPick[], slot: Slot) => picks.find((p) => p.slot === slot);

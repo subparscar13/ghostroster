@@ -7,6 +7,12 @@ compatibility_date = "2026-01-01"
 # Left as "*" so it works from any origin during local dev.
 [vars]
 ALLOWED_ORIGIN = "*"
+# Where the Worker reads authoritative player data to re-verify high claims. Point at the
+# deployed site's data dir (GitHub Pages includes the basePath). Required for verification.
+DATA_BASE_URL = "https://subparscar13.github.io/ghostroster/data"
+# Claims with at least this many wins are re-simulated server-side; lower scores are
+# trusted (they don't top the board) to bound CPU. Raise it if you hit CPU limits.
+VERIFY_MIN_WINS = "150"
 
 [[d1_databases]]
 binding = "DB"

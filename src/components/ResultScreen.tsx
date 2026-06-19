@@ -117,7 +117,7 @@ export function ResultScreen({
         </div>
       )}
 
-      {isDaily && dailyDateKey && <DailySubmit dateKey={dailyDateKey} result={result} />}
+      {isDaily && dailyDateKey && <DailySubmit dateKey={dailyDateKey} result={result} picks={picks} />}
 
       {!isDaily && preview && (
         <div className="mt-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">

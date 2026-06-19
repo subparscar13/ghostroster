@@ -5,12 +5,18 @@ It is a **separate deploy** from the static game (which stays on GitHub Pages). 
 only calls it when `NEXT_PUBLIC_LEADERBOARD_ENDPOINT` is set at build time — until then the
 whole feature is inert and the app is unchanged.
 
-Integrity posture: **trusted** (a friends board). The Worker validates fields, caps body
-size, and keeps **one best row per (device, day)**; it does **not** verify the score. If
-abuse ever appears, on-submit re-simulation is a clean drop-in (the sim is pure + seeded).
+Integrity posture: **verified for board-topping claims.** The Worker validates fields, caps
+body size, and keeps **one best row per (device, day)**. Any claim with `wins >=
+VERIFY_MIN_WINS` (default 150) is **re-simulated**: the Worker rebuilds the roster from the
+*authoritative* data chunks (it ignores any client vectors), replays `dailySeed(dateKey)`
+through the real sim, and rejects (422) on a mismatch. Lower scores — which don't top the
+board — are trusted, to bound CPU. Set `VERIFY_MIN_WINS` higher if you hit Worker CPU limits.
+
+`DATA_BASE_URL` must point at the deployed site's data dir (e.g.
+`https://subparscar13.github.io/ghostroster/data`) so verification can read real vectors.
 
 ## Routes
-- `POST /scores` — body: `{ dateKey, initials, deviceId, wins, losses, runDiff, grade, squares, division }`. Upserts the best result per `(deviceId, dateKey)`.
+- `POST /scores` — body: `{ dateKey, initials, deviceId, wins, losses, runDiff, grade, squares, division, picks }` where `picks` is `[{ playerId, slot, chunk }]` (no vectors — the Worker fetches authoritative vectors itself). Upserts the best result per `(deviceId, dateKey)`.
 - `GET /board?scope=daily&date=YYYY-MM-DD` — that day's ranking (wins desc, run-diff tiebreak).
 - `GET /board?scope=weekly` — each device's best single daily result this UTC week.
 - `GET /board?scope=alltime` — each device's best single daily result ever (+ a 162-0 count).

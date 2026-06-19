@@ -1,27 +1,34 @@
 /**
  * Ghost Roster leaderboard — Cloudflare Worker + D1 (D-012). A tiny edge API the static
- * GitHub-Pages app calls when `NEXT_PUBLIC_LEADERBOARD_ENDPOINT` is set. Two routes:
+ * GitHub-Pages app calls when `NEXT_PUBLIC_LEADERBOARD_ENDPOINT` is set.
  *
- *   POST /scores   — submit a daily result (upsert the best per device+day). Trusted: we
- *                    don't verify the score (friends board). Guards: strict field
- *                    validation, a max body size, and one row per (device, day) so a
- *                    device can't flood a day. CORS is locked to ALLOWED_ORIGIN.
- *   GET  /board    — ?scope=daily&date=YYYY-MM-DD | weekly | alltime. Daily ranks the
- *                    date's rows; weekly/all-time rank each device's BEST single daily
- *                    result (weekly bounded to the current UTC week); all-time adds a
- *                    162-0 count.
+ *   POST /scores — submit a daily result (upsert the best per device+day). High claims
+ *                  (>= VERIFY_MIN_WINS) are VERIFIED: the Worker rebuilds the roster from
+ *                  the *authoritative* data chunks (never client vectors), replays the
+ *                  day's seed through the real sim, and rejects on a mismatch. Lower
+ *                  scores (don't top the board) are trusted to bound CPU. Guards: strict
+ *                  field validation, max body size, one row per (device, day).
+ *   GET  /board  — ?scope=daily&date=YYYY-MM-DD | weekly | alltime.
  *
- * Per-IP rate limiting is best handled by a Cloudflare dashboard rule (the free WAF);
- * the unique (device,day) constraint already caps per-device writes.
+ * Verification reuses the app's pure sim (imported from ../../src/sim), so it can never
+ * drift from gameplay. CORS is locked to ALLOWED_ORIGIN.
  */
+
+import { LEAGUE_AVERAGE_OPPONENT } from "../../src/sim/baseline";
+import { hashSeed } from "../../src/sim/rng";
+import { simulateSeason } from "../../src/sim/season";
+import type { Roster } from "../../src/sim/types";
 
 export interface Env {
   DB: D1Database;
   ALLOWED_ORIGIN?: string;
+  DATA_BASE_URL?: string; // e.g. https://subparscar13.github.io/ghostroster/data
+  VERIFY_MIN_WINS?: string; // claims at/above this are re-simulated (default 150)
 }
 
-const MAX_BODY = 2048;
+const MAX_BODY = 4096;
 const LIMIT = 100;
+const HITTER_SLOTS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
 
 const cors = (origin: string) => ({
   "Access-Control-Allow-Origin": origin,
@@ -35,6 +42,77 @@ const isDate = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{
 const isInitials = (s: unknown): s is string => typeof s === "string" && /^[A-Z]{3}$/.test(s);
 const intIn = (v: unknown, lo: number, hi: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= lo && v <= hi;
 const shortStr = (v: unknown, n: number): v is string => typeof v === "string" && v.length <= n;
+
+/** Daily season seed — must match the app's `dailySeed` exactly. */
+const dailySeed = (dateKey: string): number => hashSeed(`ghostroster|${dateKey}|season`);
+
+type Pick = { playerId: string; slot: string; chunk: string };
+type Chunk = { hitters: { playerId: string; name: string; pos: string[]; vector: unknown; display: { OPS: string } }[]; pitchers: { playerId: string; name: string; role: string; allowed: unknown; stamina: number }[] };
+
+async function fetchChunks(picks: Pick[], base: string): Promise<Map<string, Chunk> | null> {
+  const paths = [...new Set(picks.map((p) => p.chunk))];
+  const out = new Map<string, Chunk>();
+  const cache = caches.default;
+  for (const path of paths) {
+    const url = `${base}/${path}`;
+    let res = await cache.match(url);
+    if (!res) {
+      res = await fetch(url);
+      if (res.ok) await cache.put(url, res.clone());
+    }
+    if (!res.ok) return null;
+    out.set(path, (await res.json()) as Chunk);
+  }
+  return out;
+}
+
+/** Rebuild the exact sim roster the client used: 9 hitters in slot order then sorted by
+ * OPS desc (matches buildSimRoster), SP1–3, RP — all from authoritative vectors. */
+function rebuildRoster(picks: Pick[], chunks: Map<string, Chunk>): Roster | null {
+  const hitter = (slot: string) => {
+    const p = picks.find((x) => x.slot === slot);
+    const h = p && chunks.get(p.chunk)?.hitters.find((x) => x.playerId === p.playerId);
+    return h || null;
+  };
+  const pitcher = (slot: string, role: string) => {
+    const p = picks.find((x) => x.slot === slot);
+    const pit = p && chunks.get(p.chunk)?.pitchers.find((x) => x.playerId === p.playerId);
+    return pit && pit.role === role ? pit : null;
+  };
+
+  const hs = HITTER_SLOTS.map(hitter);
+  if (hs.some((h) => !h)) return null;
+  const lineup = [...hs]
+    .sort((a, b) => Number.parseFloat(b!.display.OPS) - Number.parseFloat(a!.display.OPS))
+    .map((h) => ({ playerId: h!.playerId, name: h!.name, pos: h!.pos, vector: h!.vector as Roster["lineup"][number]["vector"] }));
+
+  const sps = ["SP1", "SP2", "SP3"].map((s) => pitcher(s, "SP"));
+  const rp = pitcher("RP", "RP");
+  if (sps.some((p) => !p) || !rp) return null;
+  const toP = (p: NonNullable<ReturnType<typeof pitcher>>, role: "SP" | "RP") =>
+    ({ playerId: p.playerId, name: p.name, role, allowed: p.allowed as Roster["bullpen"][number]["allowed"], stamina: p.stamina });
+
+  return { lineup, rotation: sps.map((p) => toP(p!, "SP")), bullpen: [toP(rp, "RP")] };
+}
+
+async function verifyClaim(b: Record<string, unknown>, env: Env): Promise<{ ok: boolean; reason?: string }> {
+  if (!env.DATA_BASE_URL) return { ok: false, reason: "verification unavailable" };
+  const picks = b.picks as Pick[] | undefined;
+  if (!Array.isArray(picks) || picks.length !== 13 || picks.some((p) => !p || typeof p.playerId !== "string" || !shortStr(p.chunk, 64) || !p.chunk)) {
+    return { ok: false, reason: "missing roster" };
+  }
+  const chunks = await fetchChunks(picks, env.DATA_BASE_URL.replace(/\/$/, ""));
+  if (!chunks) return { ok: false, reason: "data fetch failed" };
+  const roster = rebuildRoster(picks, chunks);
+  if (!roster) return { ok: false, reason: "roster rebuild failed" };
+  let actual: number;
+  try {
+    actual = simulateSeason(roster, LEAGUE_AVERAGE_OPPONENT, dailySeed(b.dateKey as string)).record.w;
+  } catch {
+    return { ok: false, reason: "sim failed" };
+  }
+  return actual === b.wins ? { ok: true } : { ok: false, reason: `wins mismatch (claimed ${b.wins}, simulated ${actual})` };
+}
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -58,6 +136,14 @@ export default {
       ) {
         return json({ error: "invalid" }, 400, origin);
       }
+
+      // Verify board-topping claims by replaying the real sim; trust the rest (CPU bound).
+      const minVerify = Number.parseInt(env.VERIFY_MIN_WINS ?? "150", 10);
+      if (Number.isFinite(minVerify) && b.wins >= minVerify) {
+        const v = await verifyClaim(b, env);
+        if (!v.ok) return json({ error: "verification failed", reason: v.reason }, 422, origin);
+      }
+
       await env.DB.prepare(
         `INSERT INTO scores (device_id, initials, date_key, wins, losses, run_diff, grade, squares, division, created_at)
          VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9, strftime('%s','now'))
@@ -127,7 +213,7 @@ export default {
 /** [Monday, Sunday] of the current UTC week as YYYY-MM-DD. */
 function weekBounds(): [string, string] {
   const now = new Date();
-  const monOffset = (now.getUTCDay() + 6) % 7; // days since Monday (Mon=0 … Sun=6)
+  const monOffset = (now.getUTCDay() + 6) % 7;
   const mon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - monOffset));
   const sun = new Date(mon.getTime() + 6 * 86_400_000);
   const fmt = (d: Date) =>

@@ -128,11 +128,11 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
   };
 
   const onPickHitter = (h: PoolHitter, tag: string, slot?: Slot) => {
-    const next = draftHitter(h, tag, picks, slot);
+    const next = draftHitter(h, tag, picks, slot, cell?.chunk);
     if (next) commit(next);
   };
   const onPickPitcher = (p: PoolPitcher, tag: string) => {
-    const next = draftPitcher(p, tag, picks);
+    const next = draftPitcher(p, tag, picks, cell?.chunk);
     if (next) commit(next);
   };
 

@@ -82,8 +82,11 @@ you wire it up. Full steps in `worker/README.md`. Short version (operator, one-t
 4. Lock CORS in `wrangler.toml` (`ALLOWED_ORIGIN = "https://subparscar13.github.io"`), then `npx wrangler deploy` → copy the Worker URL.
 5. Set `LEADERBOARD_ENDPOINT` (the Worker URL) as a GitHub repo **Variable** (Settings → Secrets and variables → Actions → Variables); the workflow passes it as `NEXT_PUBLIC_LEADERBOARD_ENDPOINT`. Redeploy.
 
-Scores are trusted (a friends board) — no roster is sent/stored. Enable a Cloudflare rate-limit
-rule on the Worker if you want extra abuse protection.
+Board-topping claims (`wins >= VERIFY_MIN_WINS`, default 150) are **re-simulated server-side**
+to verify them — the Worker rebuilds the roster from authoritative data (`DATA_BASE_URL`, set
+to your site's `/data` dir) and replays the day's seed; mismatches are rejected. Lower scores
+are trusted, to bound CPU (raise `VERIFY_MIN_WINS` if the Worker hits CPU limits). Add a
+Cloudflare rate-limit rule for extra protection.
 
 ## Analytics (T060)
 
