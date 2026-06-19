@@ -8,6 +8,7 @@ import { dailyDateKey, dailyNumber, dailyRng, dailySeed, dailyShareText, spoiler
 import { dailyThemeName, eligibleCells } from "@/lib/divisions";
 import { buildSimRoster, draftHitter, draftPitcher, isComplete } from "@/lib/draft";
 import { canRerollEra, canRerollTeam, randomCell, rerollEra, rerollTeam, REROLLS_PER_RUN } from "@/lib/spin";
+import { recordRosterBuilt } from "@/lib/leaderboard";
 import { clearRun, loadRun, saveDailyResult, saveRun } from "@/lib/storage";
 import type { RunMode } from "@/lib/storage";
 import type { DraftPick, PoolHitter, PoolPitcher, Slot, SpinCell, TeamDecadeChunk, TeamsIndex } from "@/lib/types";
@@ -120,6 +121,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
       const s = seed ?? randomSeed();
       setSeed(s);
       persist(next, rerollsUsed, s);
+      void recordRosterBuilt(); // a roster just got built — bump the global ticker
       setPhase("simulate");
     } else {
       persist(next, rerollsUsed, seed);

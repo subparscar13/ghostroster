@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { CommentBox } from "./CommentBox";
 import { LeaderboardLink } from "./LeaderboardLink";
+import { RosterTicker } from "./RosterTicker";
 
 const TIP_JAR = "https://ko-fi.com/"; // TODO: replace with the real tip-jar URL at launch
 
@@ -37,6 +38,7 @@ export function Footer() {
         </a>
         <CommentBox />
       </p>
+      <RosterTicker />
     </footer>
   );
 }

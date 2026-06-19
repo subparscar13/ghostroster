@@ -125,6 +125,29 @@ export async function submitScore(sub: Submission): Promise<"ok" | "error"> {
   }
 }
 
+/** Bump the global "rosters built" counter. Fire-and-forget; never throws. */
+export async function recordRosterBuilt(): Promise<void> {
+  if (!LEADERBOARD_ENDPOINT) return;
+  try {
+    await fetch(`${LEADERBOARD_ENDPOINT}/built`, { method: "POST" });
+  } catch {
+    // best-effort vanity counter — ignore failures
+  }
+}
+
+/** Read the global "rosters built" count, or null if unavailable. */
+export async function fetchRosterCount(): Promise<number | null> {
+  if (!LEADERBOARD_ENDPOINT) return null;
+  try {
+    const res = await fetch(`${LEADERBOARD_ENDPOINT}/count`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { count?: number };
+    return typeof data.count === "number" ? data.count : null;
+  } catch {
+    return null;
+  }
+}
+
 export type BoardScope = "daily" | "weekly" | "alltime";
 export type BoardRow = {
   rank: number;

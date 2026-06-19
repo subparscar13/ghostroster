@@ -19,3 +19,12 @@ CREATE TABLE IF NOT EXISTS scores (
 
 -- Ranking (wins desc, run-diff tiebreak) scoped by board + date.
 CREATE INDEX IF NOT EXISTS idx_scores_mode_date ON scores (mode, date_key, wins DESC, run_diff DESC);
+
+-- Global vanity counters (e.g. total rosters built). Seed 'rosters' from existing
+-- submissions as a baseline; it climbs from there. Idempotent (DO NOTHING after first).
+CREATE TABLE IF NOT EXISTS counters (
+  name  TEXT    PRIMARY KEY,
+  value INTEGER NOT NULL DEFAULT 0
+);
+INSERT INTO counters (name, value) VALUES ('rosters', (SELECT COUNT(*) FROM scores))
+  ON CONFLICT(name) DO NOTHING;

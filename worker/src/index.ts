@@ -163,6 +163,19 @@ export default {
       return json({ ok: true }, 200, origin);
     }
 
+    // Global "rosters built" counter (vanity ticker). Best-effort, unauthenticated.
+    if (req.method === "POST" && url.pathname === "/built") {
+      await env.DB.prepare(
+        "INSERT INTO counters (name, value) VALUES ('rosters', 1) ON CONFLICT(name) DO UPDATE SET value = value + 1",
+      ).run();
+      const r = await env.DB.prepare("SELECT value FROM counters WHERE name='rosters'").first<{ value: number }>();
+      return json({ count: r?.value ?? 0 }, 200, origin);
+    }
+    if (req.method === "GET" && url.pathname === "/count") {
+      const r = await env.DB.prepare("SELECT value FROM counters WHERE name='rosters'").first<{ value: number }>();
+      return json({ count: r?.value ?? 0 }, 200, origin);
+    }
+
     if (req.method === "GET" && url.pathname === "/board") {
       const scope = url.searchParams.get("scope") ?? "daily";
       const mode = url.searchParams.get("mode") === "classic" ? "classic" : "daily";
