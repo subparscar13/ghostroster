@@ -33,8 +33,10 @@ These are settled. Honor them in every change; do not re-litigate.
   franchises (no logos/marks, no player photos). Negro Leagues excluded from v1
   (D-007) though present in Lahman.
 - **Static-first, no backend (D-005).** Next.js static export (`output: 'export'`),
-  client-side sim, static JSON, free-tier host (planned: Cloudflare Pages). Edge KV
-  is deferred until the P1 leaderboard lands.
+  client-side sim, static JSON, free-tier host (GitHub Pages). The app itself stays
+  fully static; the only backend is the **P1 leaderboard** (D-012), which landed as a
+  **separately-deployed Cloudflare Worker + D1** in `worker/` — env-gated
+  (`NEXT_PUBLIC_LEADERBOARD_ENDPOINT`), so the static app is unchanged/inert until configured.
 - **Deterministic pipeline.** Same Lahman edition in → byte-identical JSON out
   (sorted keys, stable ordering, pinned edition, fixed rounding).
 

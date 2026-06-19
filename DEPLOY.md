@@ -69,6 +69,22 @@ form service — no backend (constitution IV). It ships **inert** until configur
 3. Redeploy. The endpoint is inlined at build time (it's a public client-side POST
    target, not a secret). A honeypot + the service's spam filter handle bots.
 
+## Leaderboard (T083 / D-012)
+
+Daily / weekly / all-time leaderboard for daily-challenge scores (arcade 3-initials, no
+login). Backed by a **separately-deployed Cloudflare Worker + D1** in `worker/`; the static
+app calls it only when `NEXT_PUBLIC_LEADERBOARD_ENDPOINT` is set, so it ships **inert** until
+you wire it up. Full steps in `worker/README.md`. Short version (operator, one-time):
+
+1. `cd worker && npm install && npx wrangler login`
+2. `npx wrangler d1 create ghostroster-leaderboard` → paste the printed `database_id` into `worker/wrangler.toml`.
+3. `npx wrangler d1 execute ghostroster-leaderboard --remote --file=./schema.sql`
+4. Lock CORS in `wrangler.toml` (`ALLOWED_ORIGIN = "https://subparscar13.github.io"`), then `npx wrangler deploy` → copy the Worker URL.
+5. Set `LEADERBOARD_ENDPOINT` (the Worker URL) as a GitHub repo **Variable** (Settings → Secrets and variables → Actions → Variables); the workflow passes it as `NEXT_PUBLIC_LEADERBOARD_ENDPOINT`. Redeploy.
+
+Scores are trusted (a friends board) — no roster is sent/stored. Enable a Cloudflare rate-limit
+rule on the Worker if you want extra abuse protection.
+
 ## Analytics (T060)
 
 The Plausible snippet ships inert; it loads only when `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`

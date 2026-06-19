@@ -206,7 +206,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
             setBoxGame(game ?? null);
             setPhase("boxscores");
           }}
-          {...(mode === "daily" && dateKey ? { dailyShareText: dailyShareText(dateKey, result) } : {})}
+          {...(mode === "daily" && dateKey ? { dailyShareText: dailyShareText(dateKey, result), dailyDateKey: dateKey } : {})}
         />
       );
     }

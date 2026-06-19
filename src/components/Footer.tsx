@@ -8,6 +8,7 @@
 import Link from "next/link";
 
 import { CommentBox } from "./CommentBox";
+import { LeaderboardLink } from "./LeaderboardLink";
 
 const TIP_JAR = "https://ko-fi.com/"; // TODO: replace with the real tip-jar URL at launch
 
@@ -26,6 +27,7 @@ export function Footer() {
       </p>
       <p className="mt-1">Franchises shown as text only — not affiliated with or endorsed by MLB or the MLBPA.</p>
       <p className="mt-1">
+        <LeaderboardLink />
         <Link href="/how-it-works" className="underline decoration-faded underline-offset-2 hover:text-ink">
           how it works
         </Link>

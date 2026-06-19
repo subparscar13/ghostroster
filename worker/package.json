@@ -1,0 +1,14 @@
+{
+  "name": "ghostroster-leaderboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ghost Roster leaderboard — Cloudflare Worker + D1 (D-012). Separate deploy; the static app calls it when NEXT_PUBLIC_LEADERBOARD_ENDPOINT is set.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4",
+    "wrangler": "^3"
+  }
+}

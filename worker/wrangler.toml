@@ -1,0 +1,14 @@
+name = "ghostroster-leaderboard"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+# Lock this to the site origin for production, e.g.
+#   ALLOWED_ORIGIN = "https://subparscar13.github.io"
+# Left as "*" so it works from any origin during local dev.
+[vars]
+ALLOWED_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ghostroster-leaderboard"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

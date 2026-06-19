@@ -8,6 +8,7 @@ import { quip, seasonStats, topPerformerName } from "@/lib/result";
 import { renderResultCard, shareResultImage } from "@/lib/share";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
+import { DailySubmit } from "./DailySubmit";
 import { RosterSidebar } from "./RosterSidebar";
 
 /** Result screen (T045): record + letter grade + the 13-man roster card with era
@@ -18,12 +19,14 @@ export function ResultScreen({
   onReplay,
   onViewBoxScores,
   dailyShareText,
+  dailyDateKey,
 }: {
   result: SeasonResult;
   picks: DraftPick[];
   onReplay: () => void;
   onViewBoxScores: (game?: number) => void;
   dailyShareText?: string;
+  dailyDateKey?: string;
 }) {
   const { w, l } = result.record;
   const stats = seasonStats(result);
@@ -113,6 +116,8 @@ export function ResultScreen({
           {shareStatus && <p className="mt-2 text-center font-mono text-xs text-navy">{shareStatus}</p>}
         </div>
       )}
+
+      {isDaily && dailyDateKey && <DailySubmit dateKey={dailyDateKey} result={result} />}
 
       {!isDaily && preview && (
         <div className="mt-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">
