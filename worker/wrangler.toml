@@ -17,4 +17,4 @@ VERIFY_MIN_WINS = "150"
 [[d1_databases]]
 binding = "DB"
 database_name = "ghostroster-leaderboard"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "c3a5e3e8-9b98-4d49-9405-0eaf3fa9d8fe"

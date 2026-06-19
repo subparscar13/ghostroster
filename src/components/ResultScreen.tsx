@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { shareDaily } from "@/lib/daily";
+import { dailyDateKey as currentDateKey, shareDaily } from "@/lib/daily";
 import { quip, seasonStats, topPerformerName } from "@/lib/result";
 import { renderResultCard, shareResultImage } from "@/lib/share";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
-import { DailySubmit } from "./DailySubmit";
 import { RosterSidebar } from "./RosterSidebar";
+import { ScoreSubmit } from "./ScoreSubmit";
 
 /** Result screen (T045): record + letter grade + the 13-man roster card with era
  * tags + one highlight beat + one generated quip. Screenshot/share is M4 (T051). */
@@ -20,6 +20,7 @@ export function ResultScreen({
   onViewBoxScores,
   dailyShareText,
   dailyDateKey,
+  seed,
 }: {
   result: SeasonResult;
   picks: DraftPick[];
@@ -27,6 +28,7 @@ export function ResultScreen({
   onViewBoxScores: (game?: number) => void;
   dailyShareText?: string;
   dailyDateKey?: string;
+  seed?: number | null;
 }) {
   const { w, l } = result.record;
   const stats = seasonStats(result);
@@ -117,7 +119,10 @@ export function ResultScreen({
         </div>
       )}
 
-      {isDaily && dailyDateKey && <DailySubmit dateKey={dailyDateKey} result={result} picks={picks} />}
+      {isDaily && dailyDateKey && <ScoreSubmit mode="daily" dateKey={dailyDateKey} result={result} picks={picks} />}
+      {!isDaily && seed != null && (
+        <ScoreSubmit mode="classic" dateKey={currentDateKey(new Date())} result={result} picks={picks} seed={seed} />
+      )}
 
       {!isDaily && preview && (
         <div className="mt-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">

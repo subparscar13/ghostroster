@@ -5,12 +5,16 @@
   "type": "module",
   "description": "Ghost Roster — Markov PA-level baseball season sim (pure, seeded). Next.js app lands at M3.",
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "calibrate": "tsx pipeline/tuning/calibrate.ts"
+    "calibrate": "tsx pipeline/tuning/calibrate.ts",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.1",
@@ -20,9 +24,11 @@
     "tailwindcss": "^4.3.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "wrangler": "^4.102.0"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.19.11",
     "next": "^16.2.9",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

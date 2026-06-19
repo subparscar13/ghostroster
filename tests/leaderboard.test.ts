@@ -35,10 +35,10 @@ describe("buildSubmission", () => {
     { slot: "C", playerId: "h1", name: "H1", kind: "hitter", tag: "", chunk: "td/NYY-1990.json" },
     { slot: "SP1", playerId: "p1", name: "P1", kind: "sp", tag: "", chunk: "td/BOS-2000.json" },
   ] as DraftPick[];
-  const sub = buildSubmission("2026-06-17", "ABC", result, picks); // Wednesday → NL Central
+  const sub = buildSubmission("daily", "2026-06-17", "ABC", result, picks); // Wednesday → NL Central
 
-  it("carries the record, grade, and the day's division", () => {
-    expect(sub).toMatchObject({ dateKey: "2026-06-17", initials: "ABC", wins: 150, losses: 12, grade: "A", division: "NL Central" });
+  it("carries the mode, record, grade, and the day's division", () => {
+    expect(sub).toMatchObject({ mode: "daily", dateKey: "2026-06-17", initials: "ABC", wins: 150, losses: 12, grade: "A", division: "NL Central" });
   });
   it("computes run differential from the logs", () => {
     expect(sub.runDiff).toBe(7 + 3 - (2 + 5)); // runsFor − runsAgainst = 3
@@ -50,5 +50,10 @@ describe("buildSubmission", () => {
     ]);
     expect(typeof sub.squares).toBe("string");
     expect(sub.deviceId).toBe(""); // SSR/node: no window (a real browser fills it)
+  });
+  it("classic mode carries the seed and a 'Classic' division", () => {
+    const c = buildSubmission("classic", "2026-06-17", "ABC", result, picks, 12345);
+    expect(c).toMatchObject({ mode: "classic", division: "Classic", seed: 12345 });
+    expect(sub).not.toHaveProperty("seed"); // daily omits the seed (server derives it)
   });
 });

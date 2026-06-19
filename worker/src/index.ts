@@ -95,7 +95,7 @@ function rebuildRoster(picks: Pick[], chunks: Map<string, Chunk>): Roster | null
   return { lineup, rotation: sps.map((p) => toP(p!, "SP")), bullpen: [toP(rp, "RP")] };
 }
 
-async function verifyClaim(b: Record<string, unknown>, env: Env): Promise<{ ok: boolean; reason?: string }> {
+async function verifyClaim(b: Record<string, unknown>, env: Env, simSeed: number): Promise<{ ok: boolean; reason?: string }> {
   if (!env.DATA_BASE_URL) return { ok: false, reason: "verification unavailable" };
   const picks = b.picks as Pick[] | undefined;
   if (!Array.isArray(picks) || picks.length !== 13 || picks.some((p) => !p || typeof p.playerId !== "string" || !shortStr(p.chunk, 64) || !p.chunk)) {
@@ -107,7 +107,7 @@ async function verifyClaim(b: Record<string, unknown>, env: Env): Promise<{ ok: 
   if (!roster) return { ok: false, reason: "roster rebuild failed" };
   let actual: number;
   try {
-    actual = simulateSeason(roster, LEAGUE_AVERAGE_OPPONENT, dailySeed(b.dateKey as string)).record.w;
+    actual = simulateSeason(roster, LEAGUE_AVERAGE_OPPONENT, simSeed).record.w;
   } catch {
     return { ok: false, reason: "sim failed" };
   }
@@ -129,38 +129,43 @@ export default {
       } catch {
         return json({ error: "bad json" }, 400, origin);
       }
+      const mode = b.mode === "classic" ? "classic" : "daily";
       if (
         !isInitials(b.initials) || !isDate(b.dateKey) || !shortStr(b.deviceId, 64) || !b.deviceId ||
         !intIn(b.wins, 0, 162) || !intIn(b.losses, 0, 162) || typeof b.runDiff !== "number" ||
-        !shortStr(b.grade, 3) || !shortStr(b.division ?? "", 24) || !shortStr(b.squares ?? "", 64)
+        !shortStr(b.grade, 3) || !shortStr(b.division ?? "", 24) || !shortStr(b.squares ?? "", 64) ||
+        (mode === "classic" && !intIn(b.seed, 0, 0xffffffff))
       ) {
         return json({ error: "invalid" }, 400, origin);
       }
 
       // Verify board-topping claims by replaying the real sim; trust the rest (CPU bound).
+      // Daily replays the date-derived seed; classic replays the run's own submitted seed.
+      const simSeed = mode === "classic" ? (b.seed as number) : dailySeed(b.dateKey as string);
       const minVerify = Number.parseInt(env.VERIFY_MIN_WINS ?? "150", 10);
       if (Number.isFinite(minVerify) && b.wins >= minVerify) {
-        const v = await verifyClaim(b, env);
+        const v = await verifyClaim(b, env, simSeed);
         if (!v.ok) return json({ error: "verification failed", reason: v.reason }, 422, origin);
       }
 
       await env.DB.prepare(
-        `INSERT INTO scores (device_id, initials, date_key, wins, losses, run_diff, grade, squares, division, created_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9, strftime('%s','now'))
-         ON CONFLICT(device_id, date_key) DO UPDATE SET
+        `INSERT INTO scores (device_id, initials, date_key, mode, wins, losses, run_diff, grade, squares, division, created_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10, strftime('%s','now'))
+         ON CONFLICT(device_id, date_key, mode) DO UPDATE SET
            initials=excluded.initials, wins=excluded.wins, losses=excluded.losses,
            run_diff=excluded.run_diff, grade=excluded.grade, squares=excluded.squares,
            division=excluded.division, created_at=excluded.created_at
          WHERE excluded.wins > scores.wins
             OR (excluded.wins = scores.wins AND excluded.run_diff > scores.run_diff)`,
       )
-        .bind(b.deviceId, b.initials, b.dateKey, b.wins, b.losses, Math.trunc(b.runDiff), b.grade, b.squares ?? "", b.division ?? "")
+        .bind(b.deviceId, b.initials, b.dateKey, mode, b.wins, b.losses, Math.trunc(b.runDiff), b.grade, b.squares ?? "", b.division ?? "")
         .run();
       return json({ ok: true }, 200, origin);
     }
 
     if (req.method === "GET" && url.pathname === "/board") {
       const scope = url.searchParams.get("scope") ?? "daily";
+      const mode = url.searchParams.get("mode") === "classic" ? "classic" : "daily";
       let results: Record<string, unknown>[] = [];
 
       if (scope === "daily") {
@@ -168,19 +173,20 @@ export default {
         if (!isDate(date)) return json({ error: "bad date" }, 400, origin);
         const r = await env.DB.prepare(
           `SELECT initials, wins, losses, grade, division, date_key FROM scores
-           WHERE date_key=?1 ORDER BY wins DESC, run_diff DESC LIMIT ?2`,
-        ).bind(date, LIMIT).all<Record<string, unknown>>();
+           WHERE date_key=?1 AND mode=?2 ORDER BY wins DESC, run_diff DESC LIMIT ?3`,
+        ).bind(date, mode, LIMIT).all<Record<string, unknown>>();
         results = r.results ?? [];
       } else if (scope === "weekly" || scope === "alltime") {
-        const binds: unknown[] = [];
-        let where = "";
+        const binds: unknown[] = [mode];
+        let where = "WHERE mode = ?1";
         if (scope === "weekly") {
           const [start, end] = weekBounds();
-          where = "WHERE date_key BETWEEN ?1 AND ?2";
+          where += " AND date_key BETWEEN ?2 AND ?3";
           binds.push(start, end);
         }
+        // perfect_count is scoped to the same board via s.mode (s is already filtered to `mode`).
         const perfect = scope === "alltime"
-          ? ", (SELECT COUNT(*) FROM scores p WHERE p.device_id = s.device_id AND p.wins = 162) AS perfect_count"
+          ? ", (SELECT COUNT(*) FROM scores p WHERE p.device_id = s.device_id AND p.mode = s.mode AND p.wins = 162) AS perfect_count"
           : "";
         const r = await env.DB.prepare(
           `SELECT s.initials, s.wins, s.losses, s.grade, s.division, s.date_key${perfect}

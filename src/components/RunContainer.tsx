@@ -201,6 +201,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
         <ResultScreen
           result={result}
           picks={picks}
+          seed={seed}
           onReplay={startOver}
           onViewBoxScores={(game) => {
             setBoxGame(game ?? null);

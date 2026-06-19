@@ -3,21 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { buildSubmission, leaderboardEnabled, loadInitials, saveInitials, submitScore, validateInitials } from "@/lib/leaderboard";
+import { type BoardMode, buildSubmission, leaderboardEnabled, loadInitials, saveInitials, submitScore, validateInitials } from "@/lib/leaderboard";
 import type { DraftPick } from "@/lib/types";
 import type { SeasonResult } from "@/sim/types";
 
-/** Arcade 3-initials entry on the daily result (D-012). Renders nothing until the
- * leaderboard endpoint is configured. The roster (ids only) rides along so the Worker
- * can re-verify high claims. */
-export function DailySubmit({ dateKey, result, picks }: { dateKey: string; result: SeasonResult; picks: DraftPick[] }) {
+/** Arcade 3-initials entry on the result screen (D-012). Works for both boards: the
+ * daily challenge and the regular (classic) game. Renders nothing until the leaderboard
+ * endpoint is configured. The roster (ids only) + the classic seed ride along so the
+ * Worker can re-verify high claims. */
+export function ScoreSubmit({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number }) {
   if (!leaderboardEnabled()) return null;
-  return <Inner dateKey={dateKey} result={result} picks={picks} />;
+  return <Inner mode={mode} dateKey={dateKey} result={result} picks={picks} {...(seed != null ? { seed } : {})} />;
 }
 
-function Inner({ dateKey, result, picks }: { dateKey: string; result: SeasonResult; picks: DraftPick[] }) {
+function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number }) {
   const [initials, setInitials] = useState(loadInitials());
   const [status, setStatus] = useState<"idle" | "sending" | "posted" | "error" | "invalid">("idle");
+  const label = mode === "daily" ? "today’s leaderboard" : "the all-time board";
 
   const submit = async () => {
     const valid = validateInitials(initials);
@@ -27,12 +29,12 @@ function Inner({ dateKey, result, picks }: { dateKey: string; result: SeasonResu
     }
     saveInitials(valid);
     setStatus("sending");
-    setStatus((await submitScore(buildSubmission(dateKey, valid, result, picks))) === "ok" ? "posted" : "error");
+    setStatus((await submitScore(buildSubmission(mode, dateKey, valid, result, picks, seed))) === "ok" ? "posted" : "error");
   };
 
   return (
     <div className="mt-6 rounded-lg border border-gold/60 bg-paper-dark/40 p-3 text-center">
-      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Post to today&rsquo;s leaderboard</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-vintage">Post to {label}</p>
       {status === "posted" ? (
         <p className="mt-2 font-mono text-sm text-navy">
           Posted as {validateInitials(initials)} —{" "}

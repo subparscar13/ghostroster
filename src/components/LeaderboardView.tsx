@@ -5,42 +5,54 @@ import Link from "next/link";
 
 import { dailyDateKey, dailyNumber } from "@/lib/daily";
 import { dailyThemeName } from "@/lib/divisions";
-import { type BoardRow, type BoardScope, fetchBoard, leaderboardEnabled } from "@/lib/leaderboard";
+import { type BoardMode, type BoardRow, type BoardScope, fetchBoard, leaderboardEnabled } from "@/lib/leaderboard";
 
-const TABS: { key: BoardScope; label: string }[] = [
-  { key: "daily", label: "Today" },
-  { key: "weekly", label: "This week" },
-  { key: "alltime", label: "All-time" },
-];
+const SCOPES: Record<BoardMode, { key: BoardScope; label: string }[]> = {
+  daily: [
+    { key: "daily", label: "Today" },
+    { key: "weekly", label: "This week" },
+    { key: "alltime", label: "All-time" },
+  ],
+  classic: [
+    { key: "alltime", label: "All-time" },
+    { key: "weekly", label: "This week" },
+  ],
+};
 
-/** The leaderboard page body (D-012). Fetches the chosen board from the Worker; renders
- * loading/empty/error states. The page route itself always exists; entry links are gated. */
+/** The leaderboard page body (D-012). Two boards — the Daily challenge (a fair, shared
+ * contest) and the Regular game (best classic seasons) — each with scope sub-tabs. */
 export function LeaderboardView() {
+  const [board, setBoard] = useState<BoardMode>("daily");
   const [scope, setScope] = useState<BoardScope>("daily");
   const [rows, setRows] = useState<BoardRow[] | null>(null);
   const [error, setError] = useState(false);
   const enabled = leaderboardEnabled();
   const today = dailyDateKey(new Date());
 
+  const switchBoard = (b: BoardMode) => {
+    setBoard(b);
+    setScope(SCOPES[b][0]!.key); // default scope for that board
+  };
+
   useEffect(() => {
     if (!enabled) return;
     let live = true;
     setRows(null);
     setError(false);
-    fetchBoard(scope, scope === "daily" ? today : undefined)
+    fetchBoard(scope, board, scope === "daily" ? today : undefined)
       .then((r) => live && setRows(r))
       .catch(() => live && setError(true));
     return () => {
       live = false;
     };
-  }, [scope, enabled, today]);
+  }, [board, scope, enabled, today]);
 
   return (
     <div className="mx-auto max-w-md px-4 pt-10 pb-16">
       <p className="text-center font-mono text-xs uppercase tracking-[0.3em] text-ink-faint">Ghost Roster</p>
       <h1 className="mt-2 text-center font-display text-4xl text-ink">Leaderboard</h1>
       <p className="mt-1 text-center font-mono text-[11px] uppercase tracking-wider text-vintage">
-        Daily #{dailyNumber(today)} · {dailyThemeName(today)}
+        {board === "daily" ? `Daily #${dailyNumber(today)} · ${dailyThemeName(today)}` : "Regular game · best seasons"}
       </p>
       <div className="mx-auto my-5 h-px w-24 bg-ink" />
 
@@ -48,14 +60,30 @@ export function LeaderboardView() {
         <p className="text-center font-mono text-sm text-ink-faint">The leaderboard isn&rsquo;t live yet.</p>
       ) : (
         <>
-          <div className="mb-4 flex justify-center gap-5 font-mono text-[11px] uppercase tracking-wider">
-            {TABS.map((t) => (
+          {/* Board tabs */}
+          <div className="mb-3 flex justify-center gap-2">
+            {(["daily", "classic"] as BoardMode[]).map((b) => (
               <button
-                key={t.key}
-                onClick={() => setScope(t.key)}
-                className={`pb-1 ${scope === t.key ? "border-b-2 border-gold text-ink" : "text-ink-faint hover:text-ink"}`}
+                key={b}
+                onClick={() => switchBoard(b)}
+                className={`rounded-md border px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] transition-colors ${
+                  board === b ? "border-transparent bg-ink text-paper" : "border-faded text-ink-soft hover:bg-gold/10"
+                }`}
               >
-                {t.label}
+                {b === "daily" ? "Daily" : "Regular"}
+              </button>
+            ))}
+          </div>
+
+          {/* Scope sub-tabs */}
+          <div className="mb-4 flex justify-center gap-5 font-mono text-[11px] uppercase tracking-wider">
+            {SCOPES[board].map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setScope(s.key)}
+                className={`pb-1 ${scope === s.key ? "border-b-2 border-gold text-ink" : "text-ink-faint hover:text-ink"}`}
+              >
+                {s.label}
               </button>
             ))}
           </div>
@@ -95,10 +123,10 @@ export function LeaderboardView() {
 
       <div className="mt-10 flex flex-col items-center gap-3">
         <Link
-          href="/daily"
+          href={board === "daily" ? "/daily" : "/play"}
           className="rounded-lg bg-vintage px-8 py-3 font-mono text-sm uppercase tracking-[0.2em] text-paper transition-transform hover:scale-[1.02] active:scale-95"
         >
-          Play today&rsquo;s daily
+          {board === "daily" ? "Play today’s daily" : "Play a classic run"}
         </Link>
         <Link href="/" className="font-mono text-xs uppercase tracking-widest text-navy underline underline-offset-4">
           Home

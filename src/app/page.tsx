@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { leaderboardEnabled } from "@/lib/leaderboard";
+
 /**
  * Title screen (M3 T040 shell). The interactive run (spin → draft → simulate →
  * result) replaces this content as client state in T041+. For now it establishes
@@ -34,6 +36,15 @@ export default function Home() {
       >
         Daily challenge
       </Link>
+
+      {leaderboardEnabled() && (
+        <Link
+          href="/leaderboard"
+          className="mt-2 font-mono text-xs uppercase tracking-widest text-navy underline decoration-faded underline-offset-4 hover:text-ink"
+        >
+          Leaderboard
+        </Link>
+      )}
 
       <ol className="mt-12 grid w-full grid-cols-3 gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-faint">
         <li className="rounded-md border border-faded px-2 py-3">1 · spin</li>

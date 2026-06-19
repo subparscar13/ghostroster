@@ -61,11 +61,14 @@ export function validateInitials(raw: string): string | null {
   return /^[A-Z]{3}$/.test(s) ? s : null;
 }
 
+export type BoardMode = "daily" | "classic";
+
 /** A pick reduced to what the server needs to re-verify: who, where they slot, and the
  * authoritative data chunk to pull their real vector from (never the vector itself). */
 export type SubmissionPick = { playerId: string; slot: string; chunk: string };
 
 export type Submission = {
+  mode: BoardMode;
   dateKey: string;
   initials: string;
   deviceId: string;
@@ -76,14 +79,24 @@ export type Submission = {
   squares: string;
   division: string;
   picks: SubmissionPick[];
+  seed?: number; // classic only — the run's seed, so the Worker can replay it (daily derives the seed from the date)
 };
 
-/** The POST body for a daily result. Includes the roster as `(playerId, slot, chunk)` so
- * the Worker can rebuild it from authoritative data and re-simulate to verify high claims
- * (D-012) — no vectors are sent, so a tampered roster can't pass. */
-export function buildSubmission(dateKey: string, initials: string, result: SeasonResult, picks: DraftPick[]): Submission {
+/** The POST body for a result. Includes the roster as `(playerId, slot, chunk)` so the
+ * Worker can rebuild it from authoritative data and re-simulate high claims (D-012) — no
+ * vectors are sent, so a tampered roster can't pass. Classic runs also send their `seed`
+ * (the daily derives its seed from the date). */
+export function buildSubmission(
+  mode: BoardMode,
+  dateKey: string,
+  initials: string,
+  result: SeasonResult,
+  picks: DraftPick[],
+  seed?: number,
+): Submission {
   const s = seasonStats(result);
   return {
+    mode,
     dateKey,
     initials,
     deviceId: getDeviceId(),
@@ -92,8 +105,9 @@ export function buildSubmission(dateKey: string, initials: string, result: Seaso
     runDiff: s.runDiff,
     grade: result.grade,
     squares: spoilerSquares(result),
-    division: dailyThemeName(dateKey),
+    division: mode === "daily" ? dailyThemeName(dateKey) : "Classic",
     picks: picks.map((p) => ({ playerId: p.playerId, slot: p.slot, chunk: p.chunk ?? "" })),
+    ...(mode === "classic" && seed != null ? { seed } : {}),
   };
 }
 
@@ -124,10 +138,11 @@ export type BoardRow = {
 };
 
 /** Fetch a board. Throws on a network/HTTP error so the page can show an error state. */
-export async function fetchBoard(scope: BoardScope, dateKey?: string): Promise<BoardRow[]> {
+export async function fetchBoard(scope: BoardScope, mode: BoardMode, dateKey?: string): Promise<BoardRow[]> {
   if (!LEADERBOARD_ENDPOINT) return [];
   const url = new URL(`${LEADERBOARD_ENDPOINT}/board`);
   url.searchParams.set("scope", scope);
+  url.searchParams.set("mode", mode);
   if (dateKey) url.searchParams.set("date", dateKey);
   const res = await fetch(url.toString(), { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`board request failed (${res.status})`);

@@ -15,11 +15,15 @@ board — are trusted, to bound CPU. Set `VERIFY_MIN_WINS` higher if you hit Wor
 `DATA_BASE_URL` must point at the deployed site's data dir (e.g.
 `https://subparscar13.github.io/ghostroster/data`) so verification can read real vectors.
 
+Two boards via `mode`: **`daily`** (the shared daily challenge) and **`classic`** (the regular
+game — a "best season" board). Daily replays the date-derived seed to verify; classic replays
+the run's **own seed**, sent in the body.
+
 ## Routes
-- `POST /scores` — body: `{ dateKey, initials, deviceId, wins, losses, runDiff, grade, squares, division, picks }` where `picks` is `[{ playerId, slot, chunk }]` (no vectors — the Worker fetches authoritative vectors itself). Upserts the best result per `(deviceId, dateKey)`.
-- `GET /board?scope=daily&date=YYYY-MM-DD` — that day's ranking (wins desc, run-diff tiebreak).
-- `GET /board?scope=weekly` — each device's best single daily result this UTC week.
-- `GET /board?scope=alltime` — each device's best single daily result ever (+ a 162-0 count).
+- `POST /scores` — body: `{ mode, dateKey, initials, deviceId, wins, losses, runDiff, grade, squares, division, picks, seed? }`. `mode` is `daily`|`classic`; `picks` is `[{ playerId, slot, chunk }]` (no vectors — the Worker fetches authoritative vectors itself); `seed` is required for `classic`. Upserts the best result per `(deviceId, dateKey, mode)`.
+- `GET /board?scope=daily&mode=daily&date=YYYY-MM-DD` — that day's ranking (wins desc, run-diff tiebreak).
+- `GET /board?scope=weekly&mode=daily|classic` — each device's best single result this UTC week.
+- `GET /board?scope=alltime&mode=daily|classic` — each device's best single result ever (+ a 162-0 count).
 
 ## Deploy (operator, one-time)
 ```sh
