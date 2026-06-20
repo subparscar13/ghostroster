@@ -114,9 +114,20 @@ async function verifyClaim(b: Record<string, unknown>, env: Env, simSeed: number
   return actual === b.wins ? { ok: true } : { ok: false, reason: `wins mismatch (claimed ${b.wins}, simulated ${actual})` };
 }
 
+/** Resolve the CORS origin from the ALLOWED_ORIGIN allowlist (comma-separated). Echoes the
+ * request's Origin only if it's allowed; otherwise returns the primary (first) entry, so a
+ * disallowed site gets a non-matching ACAO and the browser blocks it. "*" (or unset) opens
+ * to any origin. The allowlist keeps local dev working without reopening production. */
+function resolveOrigin(req: Request, env: Env): string {
+  const list = (env.ALLOWED_ORIGIN ?? "*").split(",").map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0 || list[0] === "*") return "*";
+  const reqOrigin = req.headers.get("Origin") ?? "";
+  return list.includes(reqOrigin) ? reqOrigin : list[0]!;
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    const origin = env.ALLOWED_ORIGIN || "*";
+    const origin = resolveOrigin(req, env);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
 

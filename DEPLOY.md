@@ -79,7 +79,7 @@ you wire it up. Full steps in `worker/README.md`. Short version (operator, one-t
 1. `cd worker && npm install && npx wrangler login`
 2. `npx wrangler d1 create ghostroster-leaderboard` → paste the printed `database_id` into `worker/wrangler.toml`.
 3. `npx wrangler d1 execute ghostroster-leaderboard --remote --file=./schema.sql`
-4. Lock CORS in `wrangler.toml` (`ALLOWED_ORIGIN = "https://subparscar13.github.io"`), then `npx wrangler deploy` → copy the Worker URL.
+4. CORS is locked via `ALLOWED_ORIGIN` in `wrangler.toml` — a **comma-separated allowlist** (e.g. `https://subparscar13.github.io,http://localhost:3000`). The Worker echoes the request's `Origin` only if it's in the list (else a non-matching origin → browser blocks it); set `"*"` to open to any origin. Then `npx wrangler deploy` → copy the Worker URL.
 5. Set `LEADERBOARD_ENDPOINT` (the Worker URL) as a GitHub repo **Variable** (Settings → Secrets and variables → Actions → Variables); the workflow passes it as `NEXT_PUBLIC_LEADERBOARD_ENDPOINT`. Redeploy.
 
 Board-topping claims (`wins >= VERIFY_MIN_WINS`, default 150) are **re-simulated server-side**

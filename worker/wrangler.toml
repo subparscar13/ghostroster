@@ -2,11 +2,11 @@ name = "ghostroster-leaderboard"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
-# Lock this to the site origin for production, e.g.
-#   ALLOWED_ORIGIN = "https://subparscar13.github.io"
-# Left as "*" so it works from any origin during local dev.
+# CORS allowlist (comma-separated). The Worker echoes the request's Origin only if it's in
+# this list; anything else gets a non-matching ACAO and is blocked by the browser. Includes
+# localhost for local dev against the deployed Worker. Set to "*" to open to any origin.
 [vars]
-ALLOWED_ORIGIN = "*"
+ALLOWED_ORIGIN = "https://subparscar13.github.io,http://localhost:3000"
 # Where the Worker reads authoritative player data to re-verify high claims. Point at the
 # deployed site's data dir (GitHub Pages includes the basePath). Required for verification.
 DATA_BASE_URL = "https://subparscar13.github.io/ghostroster/data"
