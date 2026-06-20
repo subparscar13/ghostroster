@@ -33,6 +33,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [rerollsUsed, setRerollsUsed] = useState<Rerolls>({ team: 0, era: 0 });
   const [seed, setSeed] = useState<number | null>(null);
+  const [reloads, setReloads] = useState(0); // classic mid-draft resumes (each re-spins the slot = a free re-roll) → asterisk on the board (D-012)
   const [phase, setPhase] = useState<Phase>("spinning");
   const [dateKey, setDateKey] = useState("");
   const [respins, setRespins] = useState(0);
@@ -76,14 +77,26 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
         setDateKey(dk);
         const saved = loadRun(mode);
         const startPicks = saved?.picks ?? [];
+        const rr = saved?.rerollsUsed ?? { team: 0, era: 0 };
         if (saved) {
           setPicks(startPicks);
-          setRerollsUsed(saved.rerollsUsed);
+          setRerollsUsed(rr);
         }
-        setSeed(mode === "daily" ? dailySeed(dk) : (saved?.seed ?? null));
+        const seedVal = mode === "daily" ? dailySeed(dk) : (saved?.seed ?? null);
+        setSeed(seedVal);
+        // A classic resume mid-draft re-spins the current slot with a fresh random team —
+        // a free re-roll. Count it so the score gets an asterisk. (Daily re-spins are
+        // deterministic, so a daily refresh gains nothing and is never flagged.)
+        const resumed = saved != null && !isComplete(startPicks);
+        const reloadCount = (saved?.reloads ?? 0) + (resumed && mode === "classic" ? 1 : 0);
+        setReloads(reloadCount);
         const cells0 = mode === "daily" && dk ? eligibleCells(idx.cells, dk) : idx.cells;
         if (isComplete(startPicks)) setPhase("result");
-        else spinTo(randomCell(cells0, rngForKey(dk, `spin:${startPicks.length + 1}`)));
+        else {
+          // Persist on the first spin too (records the reload bump + closes the pre-first-draft gap).
+          saveRun(mode, { picks: startPicks, rerollsUsed: rr, reloads: reloadCount, ...(seedVal != null ? { seed: seedVal } : {}) });
+          spinTo(randomCell(cells0, rngForKey(dk, `spin:${startPicks.length + 1}`)));
+        }
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [mode, spinTo, rngForKey]);
@@ -111,8 +124,8 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
   }, [mode, dateKey, result, picks]);
 
   const round = picks.length + 1;
-  const persist = (next: DraftPick[], rr: Rerolls, s: number | null) =>
-    saveRun(mode, { picks: next, rerollsUsed: rr, ...(s != null ? { seed: s } : {}) });
+  const persist = (next: DraftPick[], rr: Rerolls, s: number | null, rl: number = reloads) =>
+    saveRun(mode, { picks: next, rerollsUsed: rr, reloads: rl, ...(s != null ? { seed: s } : {}) });
 
   const commit = (next: DraftPick[]) => {
     setPicks(next);
@@ -164,8 +177,13 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
     setPicks([]);
     setRerollsUsed({ team: 0, era: 0 });
     setRespins(0);
-    setSeed(mode === "daily" ? dailySeed(dateKey) : null);
-    if (pool.length) spinTo(randomCell(pool, rngForKey(dateKey, `spin:1`)));
+    setReloads(0);
+    const seedVal = mode === "daily" ? dailySeed(dateKey) : null;
+    setSeed(seedVal);
+    if (pool.length) {
+      persist([], { team: 0, era: 0 }, seedVal, 0); // re-seed the persisted run so resume detection restarts clean
+      spinTo(randomCell(pool, rngForKey(dateKey, `spin:1`)));
+    }
   };
 
   const view = renderView();
@@ -204,6 +222,7 @@ export function RunContainer({ mode = "classic" }: { mode?: RunMode }) {
           result={result}
           picks={picks}
           seed={seed}
+          reloads={reloads}
           onReplay={startOver}
           onViewBoxScores={(game) => {
             setBoxGame(game ?? null);

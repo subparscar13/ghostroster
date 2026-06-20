@@ -95,6 +95,7 @@ export function LeaderboardView() {
           ) : rows.length === 0 ? (
             <p className="text-center font-mono text-xs text-ink-faint">No scores yet — be the first.</p>
           ) : (
+            <>
             <table className="w-full font-mono text-sm">
               <thead>
                 <tr className="border-b border-faded text-[10px] uppercase tracking-wider text-ink-faint">
@@ -109,7 +110,11 @@ export function LeaderboardView() {
                   <tr key={`${r.rank}-${r.initials}-${r.dateKey ?? ""}`} className="border-b border-faded/30">
                     <td className="py-1.5 tabular-nums text-ink-faint">{r.rank}</td>
                     <td className="max-w-[8rem] truncate py-1.5 pr-2 text-ink">{r.initials}</td>
-                    <td className="py-1.5 text-right tabular-nums text-vintage">{r.wins}–{r.losses}</td>
+                    <td className="py-1.5 text-right tabular-nums text-vintage">
+                      {r.wins}
+                      {r.reloads ? <span title="Used a mid-game refresh (classic re-spin)">*</span> : null}
+                      –{r.losses}
+                    </td>
                     <td className="py-1.5 text-right tabular-nums text-gold-ink">
                       {scope === "alltime" ? (r.perfectCount ?? 0) : r.grade}
                     </td>
@@ -117,6 +122,12 @@ export function LeaderboardView() {
                 ))}
               </tbody>
             </table>
+            {rows.some((r) => r.reloads) && (
+              <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-wider text-ink-faint">
+                * refreshed mid-draft (a free re-spin)
+              </p>
+            )}
+            </>
           )}
         </>
       )}

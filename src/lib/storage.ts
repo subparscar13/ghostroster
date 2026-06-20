@@ -16,6 +16,7 @@ export type PersistedRun = {
   rerollsUsed: { team: number; era: number };
   picks: DraftPick[];
   seed?: number; // season seed (set once the draft completes; fixed up-front for daily)
+  reloads?: number; // classic only: mid-draft resumes (each re-spins the current slot = a free re-roll); flags the score with an asterisk (D-012)
 };
 
 export function saveRun(mode: RunMode, run: PersistedRun): void {

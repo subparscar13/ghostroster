@@ -21,6 +21,7 @@ export function ResultScreen({
   dailyShareText,
   dailyDateKey,
   seed,
+  reloads,
 }: {
   result: SeasonResult;
   picks: DraftPick[];
@@ -29,6 +30,7 @@ export function ResultScreen({
   dailyShareText?: string;
   dailyDateKey?: string;
   seed?: number | null;
+  reloads?: number;
 }) {
   const { w, l } = result.record;
   const stats = seasonStats(result);
@@ -49,7 +51,7 @@ export function ResultScreen({
 
       {isDaily && dailyDateKey && <ScoreSubmit mode="daily" dateKey={dailyDateKey} result={result} picks={picks} />}
       {!isDaily && seed != null && (
-        <ScoreSubmit mode="classic" dateKey={currentDateKey(new Date())} result={result} picks={picks} seed={seed} />
+        <ScoreSubmit mode="classic" dateKey={currentDateKey(new Date())} result={result} picks={picks} seed={seed} {...(reloads ? { reloads } : {})} />
       )}
 
       <div className="my-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">

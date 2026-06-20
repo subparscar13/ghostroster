@@ -117,6 +117,7 @@ export type Submission = {
   division: string;
   picks: SubmissionPick[];
   seed?: number; // classic only — the run's seed, so the Worker can replay it (daily derives the seed from the date)
+  reloads?: number; // classic only — mid-draft refreshes (free re-spins); a non-zero count flags the score with an asterisk (D-012)
 };
 
 /** The POST body for a result. Includes the roster as `(playerId, slot, chunk)` so the
@@ -130,6 +131,7 @@ export function buildSubmission(
   result: SeasonResult,
   picks: DraftPick[],
   seed?: number,
+  reloads?: number,
 ): Submission {
   const s = seasonStats(result);
   return {
@@ -145,6 +147,7 @@ export function buildSubmission(
     division: mode === "daily" ? dailyThemeName(dateKey) : "Classic",
     picks: picks.map((p) => ({ playerId: p.playerId, slot: p.slot, chunk: p.chunk ?? "" })),
     ...(mode === "classic" && seed != null ? { seed } : {}),
+    ...(mode === "classic" && reloads ? { reloads } : {}), // daily refreshes gain nothing → never flagged
   };
 }
 
@@ -195,6 +198,7 @@ export type BoardRow = {
   division?: string;
   dateKey?: string;
   perfectCount?: number; // all-time only: number of 162-0 days
+  reloads?: number; // classic: mid-draft refreshes; > 0 → asterisk on the win total (D-012)
 };
 
 /** Fetch a board. Throws on a network/HTTP error so the page can show an error state. */

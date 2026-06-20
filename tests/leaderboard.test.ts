@@ -59,6 +59,13 @@ describe("buildSubmission", () => {
     expect(c).toMatchObject({ mode: "classic", division: "Classic", seed: 12345 });
     expect(sub).not.toHaveProperty("seed"); // daily omits the seed (server derives it)
   });
+  it("classic carries a non-zero reload count (refresh-exploit flag); omits it when zero", () => {
+    expect(buildSubmission("classic", "2026-06-17", "ABC", result, picks, 12345, 2)).toMatchObject({ reloads: 2 });
+    expect(buildSubmission("classic", "2026-06-17", "ABC", result, picks, 12345, 0)).not.toHaveProperty("reloads");
+  });
+  it("daily never carries reloads (a daily refresh gains nothing)", () => {
+    expect(buildSubmission("daily", "2026-06-17", "ABC", result, picks, undefined, 3)).not.toHaveProperty("reloads");
+  });
 });
 
 describe("submittedKey", () => {

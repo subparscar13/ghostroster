@@ -23,12 +23,12 @@ import type { SeasonResult } from "@/sim/types";
  * Works for both boards (daily + classic). Renders nothing until the leaderboard endpoint
  * is configured. The roster (ids only) + the classic seed ride along so the Worker can
  * re-verify high claims. Once a run is posted, the prompt stays a confirmation on replays. */
-export function ScoreSubmit({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number }) {
+export function ScoreSubmit({ mode, dateKey, result, picks, seed, reloads }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number; reloads?: number }) {
   if (!leaderboardEnabled()) return null;
-  return <Inner mode={mode} dateKey={dateKey} result={result} picks={picks} {...(seed != null ? { seed } : {})} />;
+  return <Inner mode={mode} dateKey={dateKey} result={result} picks={picks} {...(seed != null ? { seed } : {})} {...(reloads ? { reloads } : {})} />;
 }
 
-function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number }) {
+function Inner({ mode, dateKey, result, picks, seed, reloads }: { mode: BoardMode; dateKey: string; result: SeasonResult; picks: DraftPick[]; seed?: number; reloads?: number }) {
   const key = submittedKey(mode, dateKey, seed);
   const remembered = loadInitials();
   const [initials, setInitials] = useState(remembered);
@@ -58,7 +58,7 @@ function Inner({ mode, dateKey, result, picks, seed }: { mode: BoardMode; dateKe
     }
     saveInitials(valid);
     setStatus("sending");
-    const r = await submitScore(buildSubmission(mode, dateKey, valid, result, picks, seed));
+    const r = await submitScore(buildSubmission(mode, dateKey, valid, result, picks, seed, reloads));
     if (r === "ok") {
       markSubmitted(key);
       setStatus("posted");

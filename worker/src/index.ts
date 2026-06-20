@@ -148,17 +148,21 @@ export default {
         if (!v.ok) return json({ error: "verification failed", reason: v.reason }, 422, origin);
       }
 
+      // Mid-draft-refresh flag (client-reported honesty marker; missing/invalid → 0). A
+      // re-spun roster still simulates to its real wins, so this is orthogonal to verification.
+      const reloads = intIn(b.reloads, 0, 9999) ? b.reloads : 0;
+
       await env.DB.prepare(
-        `INSERT INTO scores (device_id, initials, date_key, mode, wins, losses, run_diff, grade, squares, division, created_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10, strftime('%s','now'))
+        `INSERT INTO scores (device_id, initials, date_key, mode, wins, losses, run_diff, grade, squares, division, reloads, created_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11, strftime('%s','now'))
          ON CONFLICT(device_id, date_key, mode) DO UPDATE SET
            initials=excluded.initials, wins=excluded.wins, losses=excluded.losses,
            run_diff=excluded.run_diff, grade=excluded.grade, squares=excluded.squares,
-           division=excluded.division, created_at=excluded.created_at
+           division=excluded.division, reloads=excluded.reloads, created_at=excluded.created_at
          WHERE excluded.wins > scores.wins
             OR (excluded.wins = scores.wins AND excluded.run_diff > scores.run_diff)`,
       )
-        .bind(b.deviceId, b.initials, b.dateKey, mode, b.wins, b.losses, Math.trunc(b.runDiff), b.grade, b.squares ?? "", b.division ?? "")
+        .bind(b.deviceId, b.initials, b.dateKey, mode, b.wins, b.losses, Math.trunc(b.runDiff), b.grade, b.squares ?? "", b.division ?? "", reloads)
         .run();
       return json({ ok: true }, 200, origin);
     }
@@ -185,7 +189,7 @@ export default {
         const date = url.searchParams.get("date");
         if (!isDate(date)) return json({ error: "bad date" }, 400, origin);
         const r = await env.DB.prepare(
-          `SELECT initials, wins, losses, grade, division, date_key FROM scores
+          `SELECT initials, wins, losses, grade, division, reloads, date_key FROM scores
            WHERE date_key=?1 AND mode=?2 ORDER BY wins DESC, run_diff DESC LIMIT ?3`,
         ).bind(date, mode, LIMIT).all<Record<string, unknown>>();
         results = r.results ?? [];
@@ -202,7 +206,7 @@ export default {
           ? ", (SELECT COUNT(*) FROM scores p WHERE p.device_id = s.device_id AND p.mode = s.mode AND p.wins = 162) AS perfect_count"
           : "";
         const r = await env.DB.prepare(
-          `SELECT s.initials, s.wins, s.losses, s.grade, s.division, s.date_key${perfect}
+          `SELECT s.initials, s.wins, s.losses, s.grade, s.division, s.reloads, s.date_key${perfect}
            FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY device_id ORDER BY wins DESC, run_diff DESC) rn
                  FROM scores ${where}) s
            WHERE s.rn = 1 ORDER BY s.wins DESC, s.run_diff DESC LIMIT ${LIMIT}`,
@@ -220,6 +224,7 @@ export default {
         grade: row.grade,
         division: row.division,
         dateKey: row.date_key,
+        ...(row.reloads ? { reloads: row.reloads } : {}),
         ...(row.perfect_count != null ? { perfectCount: row.perfect_count } : {}),
       }));
       return json({ rows }, 200, origin);

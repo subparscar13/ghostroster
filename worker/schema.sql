@@ -13,9 +13,12 @@ CREATE TABLE IF NOT EXISTS scores (
   grade       TEXT    NOT NULL,
   squares     TEXT    NOT NULL DEFAULT '',
   division    TEXT    NOT NULL DEFAULT '',
+  reloads     INTEGER NOT NULL DEFAULT 0,  -- classic: mid-draft refreshes (free re-spins) → asterisk on the board (D-012)
   created_at  INTEGER NOT NULL,           -- unix seconds
   UNIQUE (device_id, date_key, mode)      -- per-day-per-board upsert; caps per-device flooding
 );
+-- Migration for an existing DB (no-op on a fresh CREATE above):
+--   ALTER TABLE scores ADD COLUMN reloads INTEGER NOT NULL DEFAULT 0;
 
 -- Ranking (wins desc, run-diff tiebreak) scoped by board + date.
 CREATE INDEX IF NOT EXISTS idx_scores_mode_date ON scores (mode, date_key, wins DESC, run_diff DESC);
