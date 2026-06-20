@@ -47,6 +47,11 @@ export function ResultScreen({
         {result.grade}
       </div>
 
+      {isDaily && dailyDateKey && <ScoreSubmit mode="daily" dateKey={dailyDateKey} result={result} picks={picks} />}
+      {!isDaily && seed != null && (
+        <ScoreSubmit mode="classic" dateKey={currentDateKey(new Date())} result={result} picks={picks} seed={seed} />
+      )}
+
       <div className="my-6 rounded-lg border border-faded/60 bg-paper-dark/40 p-3">
         <RosterSidebar picks={picks} />
       </div>
@@ -117,11 +122,6 @@ export function ResultScreen({
           <p className="mt-1 text-center font-mono text-[10px] uppercase tracking-wider text-ink-faint">spoiler-safe · no roster</p>
           {shareStatus && <p className="mt-2 text-center font-mono text-xs text-navy">{shareStatus}</p>}
         </div>
-      )}
-
-      {isDaily && dailyDateKey && <ScoreSubmit mode="daily" dateKey={dailyDateKey} result={result} picks={picks} />}
-      {!isDaily && seed != null && (
-        <ScoreSubmit mode="classic" dateKey={currentDateKey(new Date())} result={result} picks={picks} seed={seed} />
       )}
 
       {!isDaily && preview && (

@@ -63,6 +63,43 @@ export function validateName(raw: string): string | null {
 
 export type BoardMode = "daily" | "classic";
 
+const SUBMITTED_KEY = "ghostroster:submitted:v1";
+const SUBMITTED_MAX = 50;
+
+/** A stable id for one playable run, so the post prompt knows whether it's already been
+ * posted. Daily = one per date (the daily is replayable but the same challenge); classic =
+ * one per seed (a "New run" gets a new seed → a fresh prompt). */
+export function submittedKey(mode: BoardMode, dateKey: string, seed?: number): string {
+  return mode === "daily" ? `daily:${dateKey}` : `classic:${seed ?? dateKey}`;
+}
+
+function readSubmitted(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SUBMITTED_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Has this run already been posted from this device? (Suppresses the re-prompt on replays.) */
+export function hasSubmitted(key: string): boolean {
+  return readSubmitted().includes(key);
+}
+
+/** Record that this run was posted. Bounded (keeps the most recent entries). Never throws. */
+export function markSubmitted(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const next = [...readSubmitted().filter((k) => k !== key), key].slice(-SUBMITTED_MAX);
+    window.localStorage.setItem(SUBMITTED_KEY, JSON.stringify(next));
+  } catch {
+    // best-effort suppression — ignore
+  }
+}
+
 /** A pick reduced to what the server needs to re-verify: who, where they slot, and the
  * authoritative data chunk to pull their real vector from (never the vector itself). */
 export type SubmissionPick = { playerId: string; slot: string; chunk: string };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSubmission, validateName } from "../src/lib/leaderboard";
+import { buildSubmission, hasSubmitted, markSubmitted, submittedKey, validateName } from "../src/lib/leaderboard";
 import type { DraftPick } from "../src/lib/types";
 import type { GameLog, SeasonResult } from "../src/sim/types";
 
@@ -58,5 +58,28 @@ describe("buildSubmission", () => {
     const c = buildSubmission("classic", "2026-06-17", "ABC", result, picks, 12345);
     expect(c).toMatchObject({ mode: "classic", division: "Classic", seed: 12345 });
     expect(sub).not.toHaveProperty("seed"); // daily omits the seed (server derives it)
+  });
+});
+
+describe("submittedKey", () => {
+  it("keys the daily by date (one challenge per day, regardless of seed)", () => {
+    expect(submittedKey("daily", "2026-06-17")).toBe("daily:2026-06-17");
+    expect(submittedKey("daily", "2026-06-17", 999)).toBe("daily:2026-06-17");
+  });
+  it("keys classic by seed (a new run → a new prompt)", () => {
+    expect(submittedKey("classic", "2026-06-17", 12345)).toBe("classic:12345");
+    expect(submittedKey("classic", "2026-06-17", 12345)).not.toBe(submittedKey("classic", "2026-06-17", 67890));
+  });
+  it("falls back to the date when a classic seed is missing", () => {
+    expect(submittedKey("classic", "2026-06-17")).toBe("classic:2026-06-17");
+  });
+});
+
+describe("hasSubmitted / markSubmitted (SSR-safe)", () => {
+  it("no-ops gracefully with no window (node): unposted, and marking never throws", () => {
+    const key = submittedKey("daily", "2026-06-17");
+    expect(hasSubmitted(key)).toBe(false);
+    expect(() => markSubmitted(key)).not.toThrow();
+    expect(hasSubmitted(key)).toBe(false); // still false — nothing persisted without localStorage
   });
 });
